@@ -97,6 +97,7 @@ enum TermcadError {
     RenderError(String),
     IoError(String),
     DependencyMissing(String),
+    SerializationError(String),
 }
 
 impl TermcadError {
@@ -106,6 +107,7 @@ impl TermcadError {
             TermcadError::RenderError(_) => 2,
             TermcadError::IoError(_) => 3,
             TermcadError::DependencyMissing(_) => 4,
+            TermcadError::SerializationError(_) => 5,
         }
     }
 }
@@ -117,6 +119,7 @@ impl std::fmt::Display for TermcadError {
             TermcadError::RenderError(msg) => write!(f, "Render error: {}", msg),
             TermcadError::IoError(msg) => write!(f, "IO error: {}", msg),
             TermcadError::DependencyMissing(msg) => write!(f, "Dependency missing: {}", msg),
+            TermcadError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
         }
     }
 }
@@ -245,7 +248,8 @@ fn cmd_init(template: Option<String>) -> Result<(), TermcadError> {
         }
     };
 
-    let json = serde_json::to_string_pretty(&scene).unwrap();
+    let json = serde_json::to_string_pretty(&scene)
+        .map_err(|e| TermcadError::SerializationError(e.to_string()))?;
     println!("{}", json);
     Ok(())
 }

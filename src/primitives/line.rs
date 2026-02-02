@@ -34,8 +34,11 @@ impl Primitive for LinePrimitive {
         }
 
         if self.closed && self.points.len() > 2 {
-            vertices.push(LineVertex::new(*self.points.last().unwrap(), self.color));
-            vertices.push(LineVertex::new(self.points[0], self.color));
+            // Safe: points.len() > 2 guarantees last() returns Some
+            if let Some(&last) = self.points.last() {
+                vertices.push(LineVertex::new(last, self.color));
+                vertices.push(LineVertex::new(self.points[0], self.color));
+            }
         }
 
         vertices

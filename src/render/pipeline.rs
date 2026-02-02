@@ -374,7 +374,8 @@ impl Renderer {
         let buffer_slice = self.output_buffer.slice(..);
         let (tx, rx) = std::sync::mpsc::channel();
         buffer_slice.map_async(wgpu::MapMode::Read, move |result| {
-            tx.send(result).unwrap();
+            // Use ok() instead of unwrap() - if receiver is dropped, recv() will handle the error
+            let _ = tx.send(result);
         });
         self.device.poll(wgpu::Maintain::Wait);
         rx.recv()

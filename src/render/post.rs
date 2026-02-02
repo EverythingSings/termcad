@@ -177,12 +177,10 @@ impl PostProcessor {
         input_texture: &'a wgpu::Texture,
         ctx: &ExpressionContext,
     ) -> &'a wgpu::Texture {
-        if self.post_pipeline.is_none() {
-            // No post-processing needed, return input directly
+        // No post-processing needed, return input directly
+        let Some(pipeline) = &self.post_pipeline else {
             return input_texture;
-        }
-
-        let pipeline = self.post_pipeline.as_ref().unwrap();
+        };
 
         // Update uniforms
         let (scanline_intensity, scanline_count) = self

@@ -18,6 +18,14 @@ pub enum GifError {
 
     #[error("Failed to read output file: {0}")]
     OutputReadError(String),
+
+    #[error("Invalid path (contains non-UTF8 characters): {0}")]
+    InvalidPath(String),
+}
+
+fn path_to_str(path: &Path) -> Result<&str, GifError> {
+    path.to_str()
+        .ok_or_else(|| GifError::InvalidPath(path.to_string_lossy().into_owned()))
 }
 
 pub fn assemble_gif(
@@ -61,10 +69,10 @@ pub fn assemble_gif(
             "-framerate",
             &fps.to_string(),
             "-i",
-            frame_pattern.to_str().unwrap(),
+            path_to_str(&frame_pattern)?,
             "-vf",
             "palettegen=stats_mode=full",
-            palette_path.to_str().unwrap(),
+            path_to_str(&palette_path)?,
         ])
         .output()
         .map_err(|e| GifError::FfmpegError(e.to_string()))?;
@@ -84,14 +92,14 @@ pub fn assemble_gif(
             "-framerate",
             &fps.to_string(),
             "-i",
-            frame_pattern.to_str().unwrap(),
+            path_to_str(&frame_pattern)?,
             "-i",
-            palette_path.to_str().unwrap(),
+            path_to_str(&palette_path)?,
             "-lavfi",
             "paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle",
             "-loop",
             "0",
-            output_path.to_str().unwrap(),
+            path_to_str(output_path)?,
         ])
         .output()
         .map_err(|e| GifError::FfmpegError(e.to_string()))?;
