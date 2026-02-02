@@ -16,6 +16,7 @@ bytemuck = { version = "1", features = ["derive"] }
 evalexpr = "11"
 thiserror = "2"
 fontdue = "0.9"
+dirs = "5"
 
 [[bin]]
 name = "termcad"

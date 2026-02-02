@@ -1,0 +1,82 @@
+{
+  "canvas": {
+    "width": 640,
+    "height": 480,
+    "background": "#030308"
+  },
+  "camera": {
+    "position": [5, 3, 7],
+    "target": [0, 1.5, 0],
+    "fov": 48
+  },
+  "duration": 4.0,
+  "fps": 24,
+  "elements": [
+    {
+      "type": "grid",
+      "divisions": 40,
+      "fade_distance": 50,
+      "color": "#0044aa",
+      "opacity": 0.3
+    },
+    {
+      "type": "wireframe",
+      "geometry": "ico",
+      "position": [0, 1.5, 0],
+      "rotation": { "y": "t * 360" },
+      "scale": 0.5,
+      "color": "#00ffff",
+      "thickness": 2.0
+    },
+    {
+      "type": "line",
+      "points": [[0, 1.5, 0], [0, 6, 0]],
+      "rotation": { "y": "t * 360", "z": 12 },
+      "color": "#ffffff",
+      "thickness": 3.0,
+      "opacity": 0.9
+    },
+    {
+      "type": "line",
+      "points": [[0, 1.5, 0], [0, -3, 0]],
+      "rotation": { "y": "t * 360", "z": 12 },
+      "color": "#ffffff",
+      "thickness": 3.0,
+      "opacity": 0.9
+    },
+    {
+      "type": "wireframe",
+      "geometry": "torus",
+      "position": [0, 1.5, 0],
+      "rotation": { "x": 90, "y": "t * 360" },
+      "scale": [1.2, 1.2, 0.1],
+      "color": "#0066ff",
+      "thickness": 1.0,
+      "opacity": 0.4
+    },
+    {
+      "type": "particles",
+      "count": 35,
+      "bounds": [25, 15, 20],
+      "size": 1.0,
+      "color": "#ffffff",
+      "opacity": 0.25,
+      "depth_fade": true
+    },
+    {
+      "type": "glyph",
+      "text": "sig.beacon.001",
+      "font_size": 0.14,
+      "position": [-4.5, -2.5, 0],
+      "color": "#0066ff",
+      "opacity": 0.5
+    }
+  ],
+  "post": {
+    "bloom": 0.5,
+    "scanlines": { "intensity": 0.12, "count": 240 },
+    "chromatic_aberration": 0.004,
+    "noise": 0.04,
+    "vignette": 0.55
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "canvas": {
+    "width": 600,
+    "height": 600,
+    "background": "#020205"
+  },
+  "camera": {
+    "position": [4, 2, 4],
+    "target": [0, 0, 0],
+    "fov": 50
+  },
+  "duration": 5.0,
+  "fps": 24,
+  "elements": [
+    {
+      "type": "wireframe",
+      "geometry": "ico",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 720" },
+      "scale": 0.6,
+      "color": "#aaccff",
+      "thickness": 1.5
+    },
+    {
+      "type": "line",
+      "points": [[0, 0, 0], [0, 4, 0]],
+      "rotation": { "y": "t * 720", "z": 15 },
+      "color": "#ffffff",
+      "thickness": 2.5,
+      "opacity": 0.9
+    },
+    {
+      "type": "line",
+      "points": [[0, 0, 0], [0, -4, 0]],
+      "rotation": { "y": "t * 720", "z": 15 },
+      "color": "#ffffff",
+      "thickness": 2.5,
+      "opacity": 0.9
+    },
+    {
+      "type": "particles",
+      "count": 40,
+      "bounds": [20, 20, 20],
+      "size": 1.0,
+      "color": "#ffffff",
+      "opacity": 0.3,
+      "depth_fade": true
+    },
+    {
+      "type": "glyph",
+      "text": "PSR J0108-1431",
+      "font_size": 0.15,
+      "position": [-2.5, -2.8, 0],
+      "color": "#4466aa",
+      "opacity": 0.6
+    }
+  ],
+  "post": {
+    "bloom": 0.35,
+    "noise": 0.03,
+    "vignette": 0.7
+  }
+}

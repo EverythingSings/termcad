@@ -154,14 +154,21 @@ fn cmd_render(
     // Validate scene
     scene.validate()?;
 
-    // Determine output path
+    // Determine output path - default to Videos or Downloads folder
     let output_path = output.unwrap_or_else(|| {
         let stem = scene_path.file_stem().unwrap_or_default();
-        if frames_mode {
-            PathBuf::from(format!("{}_frames", stem.to_string_lossy()))
+        let filename = if frames_mode {
+            format!("{}_frames", stem.to_string_lossy())
         } else {
-            PathBuf::from(format!("{}.gif", stem.to_string_lossy()))
-        }
+            format!("{}.gif", stem.to_string_lossy())
+        };
+
+        // Try Videos first, then Downloads, then current directory
+        let base_dir = dirs::video_dir()
+            .or_else(dirs::download_dir)
+            .unwrap_or_else(|| PathBuf::from("."));
+
+        base_dir.join(filename)
     });
 
     // Render
