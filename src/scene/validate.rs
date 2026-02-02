@@ -332,6 +332,1060 @@ fn validate_animated_value(value: &AnimatedValue, _name: &str) -> Result<(), Val
 mod tests {
     use super::*;
 
+    // ===========================================
+    // Test Helpers
+    // ===========================================
+
+    fn make_canvas(width: u32, height: u32, background: &str) -> Canvas {
+        Canvas {
+            width,
+            height,
+            background: background.to_string(),
+        }
+    }
+
+    fn make_camera(fov: f32) -> Camera {
+        Camera {
+            position: [5.0, 5.0, 5.0],
+            target: [0.0, 0.0, 0.0],
+            fov,
+        }
+    }
+
+    fn make_grid(divisions: u32, fade_distance: f32, color: &str) -> GridElement {
+        GridElement {
+            divisions,
+            fade_distance,
+            color: color.to_string(),
+            opacity: AnimatedValue::Static(0.5),
+        }
+    }
+
+    fn make_wireframe(color: &str, thickness: f32) -> WireframeElement {
+        WireframeElement {
+            color: color.to_string(),
+            thickness,
+            ..Default::default()
+        }
+    }
+
+    fn make_glyph(text: &str, font_size: f32, color: &str) -> GlyphElement {
+        GlyphElement {
+            text: text.to_string(),
+            font_size,
+            position: [0.0, 0.0, 0.0],
+            color: color.to_string(),
+            animation: GlyphAnimation::None,
+            opacity: AnimatedValue::Static(1.0),
+        }
+    }
+
+    fn make_line(points: Vec<[f32; 3]>, glow: f32, color: &str, thickness: f32) -> LineElement {
+        LineElement {
+            points,
+            closed: false,
+            thickness,
+            glow,
+            color: color.to_string(),
+            opacity: AnimatedValue::Static(1.0),
+        }
+    }
+
+    fn make_particles(count: u32, size: f32, color: &str) -> ParticlesElement {
+        ParticlesElement {
+            count,
+            bounds: [10.0, 10.0, 10.0],
+            size,
+            depth_fade: true,
+            color: color.to_string(),
+            opacity: AnimatedValue::Static(1.0),
+            seed: 0,
+        }
+    }
+
+    fn make_axes(length: f32, thickness: f32, colors: AxisColors) -> AxesElement {
+        AxesElement {
+            length,
+            colors,
+            position: [0.0, 0.0, 0.0],
+            thickness,
+            opacity: AnimatedValue::Static(1.0),
+        }
+    }
+
+    fn make_post(bloom: f32, chromatic_aberration: f32) -> PostProcessing {
+        PostProcessing {
+            bloom,
+            chromatic_aberration,
+            noise: 0.0,
+            vignette: 0.0,
+            crt_curvature: 0.0,
+            scanlines: None,
+        }
+    }
+
+    fn make_scene(canvas: Canvas, camera: Camera, duration: f32, fps: u32) -> Scene {
+        Scene {
+            canvas,
+            camera,
+            duration,
+            fps,
+            r#loop: true,
+            elements: vec![],
+            post: PostProcessing::default(),
+        }
+    }
+
+    // ===========================================
+    // Color Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_color_valid() {
+        assert!(validate_color("#000000").is_ok());
+        assert!(validate_color("#FFFFFF").is_ok());
+        assert!(validate_color("#00ff41").is_ok());
+        assert!(validate_color("#aAbBcC").is_ok());
+    }
+
+    #[test]
+    fn test_validate_color_invalid_short() {
+        let result = validate_color("#FFF");
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_color_invalid_char() {
+        let result = validate_color("#12345G");
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_color_without_hash_valid() {
+        // Implementation is lenient - allows colors without # prefix
+        assert!(validate_color("000000").is_ok());
+        assert!(validate_color("FFFFFF").is_ok());
+    }
+
+    #[test]
+    fn test_validate_color_wrong_length_no_hash() {
+        // 5 chars without hash = invalid (not 6)
+        let result = validate_color("12345");
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_color_too_long() {
+        let result = validate_color("#1234567");
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    // ===========================================
+    // Canvas Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_canvas_min_dimensions() {
+        let canvas = make_canvas(1, 1, "#000000");
+        assert!(validate_canvas(&canvas).is_ok());
+    }
+
+    #[test]
+    fn test_validate_canvas_max_dimensions() {
+        let canvas = make_canvas(4096, 4096, "#000000");
+        assert!(validate_canvas(&canvas).is_ok());
+    }
+
+    #[test]
+    fn test_validate_canvas_zero_width() {
+        let canvas = make_canvas(0, 600, "#000000");
+        let result = validate_canvas(&canvas);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidDimensions(_)) => {}
+            _ => panic!("Expected InvalidDimensions error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_canvas_zero_height() {
+        let canvas = make_canvas(800, 0, "#000000");
+        let result = validate_canvas(&canvas);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidDimensions(_)) => {}
+            _ => panic!("Expected InvalidDimensions error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_canvas_exceeds_max() {
+        let canvas = make_canvas(4097, 600, "#000000");
+        let result = validate_canvas(&canvas);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidDimensions(_)) => {}
+            _ => panic!("Expected InvalidDimensions error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_canvas_invalid_color() {
+        let canvas = make_canvas(800, 600, "invalid");
+        let result = validate_canvas(&canvas);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    // ===========================================
+    // Camera Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_camera_valid_fov() {
+        assert!(validate_camera(&make_camera(45.0)).is_ok());
+        assert!(validate_camera(&make_camera(90.0)).is_ok());
+    }
+
+    #[test]
+    fn test_validate_camera_fov_boundary() {
+        assert!(validate_camera(&make_camera(0.01)).is_ok());
+        assert!(validate_camera(&make_camera(179.99)).is_ok());
+    }
+
+    #[test]
+    fn test_validate_camera_fov_zero() {
+        let result = validate_camera(&make_camera(0.0));
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(_)) => {}
+            _ => panic!("Expected InvalidValue error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_camera_fov_180() {
+        let result = validate_camera(&make_camera(180.0));
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(_)) => {}
+            _ => panic!("Expected InvalidValue error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_camera_fov_negative() {
+        let result = validate_camera(&make_camera(-10.0));
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(_)) => {}
+            _ => panic!("Expected InvalidValue error"),
+        }
+    }
+
+    // ===========================================
+    // Scene Timing Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_scene_valid_timing() {
+        let scene = make_scene(Canvas::default(), Camera::default(), 2.0, 30);
+        assert!(validate_scene(&scene).is_ok());
+    }
+
+    #[test]
+    fn test_validate_scene_fps_boundaries() {
+        let scene_min = make_scene(Canvas::default(), Camera::default(), 1.0, 1);
+        assert!(validate_scene(&scene_min).is_ok());
+
+        let scene_max = make_scene(Canvas::default(), Camera::default(), 1.0, 120);
+        assert!(validate_scene(&scene_max).is_ok());
+    }
+
+    #[test]
+    fn test_validate_scene_zero_duration() {
+        let scene = make_scene(Canvas::default(), Camera::default(), 0.0, 30);
+        let result = validate_scene(&scene);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("duration"));
+            }
+            _ => panic!("Expected InvalidValue error about duration"),
+        }
+    }
+
+    #[test]
+    fn test_validate_scene_negative_duration() {
+        let scene = make_scene(Canvas::default(), Camera::default(), -1.0, 30);
+        let result = validate_scene(&scene);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("duration"));
+            }
+            _ => panic!("Expected InvalidValue error about duration"),
+        }
+    }
+
+    #[test]
+    fn test_validate_scene_zero_fps() {
+        let scene = make_scene(Canvas::default(), Camera::default(), 2.0, 0);
+        let result = validate_scene(&scene);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("fps"));
+            }
+            _ => panic!("Expected InvalidValue error about fps"),
+        }
+    }
+
+    #[test]
+    fn test_validate_scene_fps_exceeds_max() {
+        let scene = make_scene(Canvas::default(), Camera::default(), 2.0, 121);
+        let result = validate_scene(&scene);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("fps"));
+            }
+            _ => panic!("Expected InvalidValue error about fps"),
+        }
+    }
+
+    // ===========================================
+    // Grid Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_grid_valid() {
+        let grid = make_grid(20, 50.0, "#00ff41");
+        assert!(validate_grid(&grid).is_ok());
+    }
+
+    #[test]
+    fn test_validate_grid_zero_divisions() {
+        let grid = make_grid(0, 50.0, "#00ff41");
+        let result = validate_grid(&grid);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("divisions"));
+            }
+            _ => panic!("Expected InvalidValue error about divisions"),
+        }
+    }
+
+    #[test]
+    fn test_validate_grid_zero_fade() {
+        let grid = make_grid(20, 0.0, "#00ff41");
+        let result = validate_grid(&grid);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("fade_distance"));
+            }
+            _ => panic!("Expected InvalidValue error about fade_distance"),
+        }
+    }
+
+    #[test]
+    fn test_validate_grid_negative_fade() {
+        let grid = make_grid(20, -10.0, "#00ff41");
+        let result = validate_grid(&grid);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("fade_distance"));
+            }
+            _ => panic!("Expected InvalidValue error about fade_distance"),
+        }
+    }
+
+    #[test]
+    fn test_validate_grid_invalid_color() {
+        let grid = make_grid(20, 50.0, "bad");
+        let result = validate_grid(&grid);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    // ===========================================
+    // Wireframe Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_wireframe_valid() {
+        let wf = make_wireframe("#00ff41", 2.0);
+        assert!(validate_wireframe(&wf).is_ok());
+    }
+
+    #[test]
+    fn test_validate_wireframe_zero_thickness() {
+        let wf = make_wireframe("#00ff41", 0.0);
+        let result = validate_wireframe(&wf);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("thickness"));
+            }
+            _ => panic!("Expected InvalidValue error about thickness"),
+        }
+    }
+
+    #[test]
+    fn test_validate_wireframe_invalid_rotation() {
+        let mut wf = make_wireframe("#00ff41", 2.0);
+        wf.rotation.y = AnimatedValue::Expression("invalid syntax".to_string());
+        let result = validate_wireframe(&wf);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidExpression(_)) => {}
+            _ => panic!("Expected InvalidExpression error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_wireframe_invalid_color() {
+        let wf = make_wireframe("notacolor", 2.0);
+        let result = validate_wireframe(&wf);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    // ===========================================
+    // Glyph Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_glyph_valid() {
+        let glyph = make_glyph("HELLO", 1.0, "#00ff41");
+        assert!(validate_glyph(&glyph).is_ok());
+    }
+
+    #[test]
+    fn test_validate_glyph_empty_text() {
+        let glyph = make_glyph("", 1.0, "#00ff41");
+        let result = validate_glyph(&glyph);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("text"));
+            }
+            _ => panic!("Expected InvalidValue error about text"),
+        }
+    }
+
+    #[test]
+    fn test_validate_glyph_zero_font_size() {
+        let glyph = make_glyph("HELLO", 0.0, "#00ff41");
+        let result = validate_glyph(&glyph);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("font_size"));
+            }
+            _ => panic!("Expected InvalidValue error about font_size"),
+        }
+    }
+
+    #[test]
+    fn test_validate_glyph_negative_font_size() {
+        let glyph = make_glyph("HELLO", -1.0, "#00ff41");
+        let result = validate_glyph(&glyph);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("font_size"));
+            }
+            _ => panic!("Expected InvalidValue error about font_size"),
+        }
+    }
+
+    #[test]
+    fn test_validate_glyph_invalid_color() {
+        let glyph = make_glyph("HELLO", 1.0, "bad");
+        let result = validate_glyph(&glyph);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    // ===========================================
+    // Line Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_line_valid() {
+        let line = make_line(
+            vec![[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
+            0.5,
+            "#00ff41",
+            2.0,
+        );
+        assert!(validate_line(&line).is_ok());
+    }
+
+    #[test]
+    fn test_validate_line_one_point() {
+        let line = make_line(vec![[0.0, 0.0, 0.0]], 0.5, "#00ff41", 2.0);
+        let result = validate_line(&line);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("2 points"));
+            }
+            _ => panic!("Expected InvalidValue error about points"),
+        }
+    }
+
+    #[test]
+    fn test_validate_line_zero_points() {
+        let line = make_line(vec![], 0.5, "#00ff41", 2.0);
+        let result = validate_line(&line);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("2 points"));
+            }
+            _ => panic!("Expected InvalidValue error about points"),
+        }
+    }
+
+    #[test]
+    fn test_validate_line_glow_valid() {
+        // Test boundaries
+        let line_zero = make_line(
+            vec![[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
+            0.0,
+            "#00ff41",
+            2.0,
+        );
+        assert!(validate_line(&line_zero).is_ok());
+
+        let line_one = make_line(
+            vec![[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
+            1.0,
+            "#00ff41",
+            2.0,
+        );
+        assert!(validate_line(&line_one).is_ok());
+    }
+
+    #[test]
+    fn test_validate_line_glow_exceeds() {
+        let line = make_line(
+            vec![[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
+            1.1,
+            "#00ff41",
+            2.0,
+        );
+        let result = validate_line(&line);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("glow"));
+            }
+            _ => panic!("Expected InvalidValue error about glow"),
+        }
+    }
+
+    #[test]
+    fn test_validate_line_glow_negative() {
+        let line = make_line(
+            vec![[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
+            -0.1,
+            "#00ff41",
+            2.0,
+        );
+        let result = validate_line(&line);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("glow"));
+            }
+            _ => panic!("Expected InvalidValue error about glow"),
+        }
+    }
+
+    #[test]
+    fn test_validate_line_zero_thickness() {
+        let line = make_line(
+            vec![[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
+            0.5,
+            "#00ff41",
+            0.0,
+        );
+        let result = validate_line(&line);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("thickness"));
+            }
+            _ => panic!("Expected InvalidValue error about thickness"),
+        }
+    }
+
+    #[test]
+    fn test_validate_line_invalid_color() {
+        let line = make_line(
+            vec![[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]],
+            0.5,
+            "bad",
+            2.0,
+        );
+        let result = validate_line(&line);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    // ===========================================
+    // Particles Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_particles_valid() {
+        let particles = make_particles(100, 2.0, "#00ff41");
+        assert!(validate_particles(&particles).is_ok());
+    }
+
+    #[test]
+    fn test_validate_particles_zero_count() {
+        let particles = make_particles(0, 2.0, "#00ff41");
+        let result = validate_particles(&particles);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("count"));
+            }
+            _ => panic!("Expected InvalidValue error about count"),
+        }
+    }
+
+    #[test]
+    fn test_validate_particles_zero_size() {
+        let particles = make_particles(100, 0.0, "#00ff41");
+        let result = validate_particles(&particles);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("size"));
+            }
+            _ => panic!("Expected InvalidValue error about size"),
+        }
+    }
+
+    #[test]
+    fn test_validate_particles_negative_size() {
+        let particles = make_particles(100, -1.0, "#00ff41");
+        let result = validate_particles(&particles);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("size"));
+            }
+            _ => panic!("Expected InvalidValue error about size"),
+        }
+    }
+
+    #[test]
+    fn test_validate_particles_invalid_color() {
+        let particles = make_particles(100, 2.0, "bad");
+        let result = validate_particles(&particles);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    // ===========================================
+    // Axes Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_axes_valid() {
+        let axes = make_axes(1.0, 2.0, AxisColors::default());
+        assert!(validate_axes(&axes).is_ok());
+    }
+
+    #[test]
+    fn test_validate_axes_zero_length() {
+        let axes = make_axes(0.0, 2.0, AxisColors::default());
+        let result = validate_axes(&axes);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("length"));
+            }
+            _ => panic!("Expected InvalidValue error about length"),
+        }
+    }
+
+    #[test]
+    fn test_validate_axes_negative_length() {
+        let axes = make_axes(-1.0, 2.0, AxisColors::default());
+        let result = validate_axes(&axes);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("length"));
+            }
+            _ => panic!("Expected InvalidValue error about length"),
+        }
+    }
+
+    #[test]
+    fn test_validate_axes_zero_thickness() {
+        let axes = make_axes(1.0, 0.0, AxisColors::default());
+        let result = validate_axes(&axes);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("thickness"));
+            }
+            _ => panic!("Expected InvalidValue error about thickness"),
+        }
+    }
+
+    #[test]
+    fn test_validate_axes_invalid_x_color() {
+        let colors = AxisColors {
+            x: "bad".to_string(),
+            y: "#00ff00".to_string(),
+            z: "#0000ff".to_string(),
+        };
+        let axes = make_axes(1.0, 2.0, colors);
+        let result = validate_axes(&axes);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_axes_invalid_y_color() {
+        let colors = AxisColors {
+            x: "#ff0000".to_string(),
+            y: "bad".to_string(),
+            z: "#0000ff".to_string(),
+        };
+        let axes = make_axes(1.0, 2.0, colors);
+        let result = validate_axes(&axes);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_axes_invalid_z_color() {
+        let colors = AxisColors {
+            x: "#ff0000".to_string(),
+            y: "#00ff00".to_string(),
+            z: "bad".to_string(),
+        };
+        let axes = make_axes(1.0, 2.0, colors);
+        let result = validate_axes(&axes);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidColor(_)) => {}
+            _ => panic!("Expected InvalidColor error"),
+        }
+    }
+
+    // ===========================================
+    // Post-Processing Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_post_valid_all() {
+        let post = PostProcessing {
+            bloom: 0.5,
+            chromatic_aberration: 0.05,
+            noise: 0.1,
+            vignette: 0.3,
+            crt_curvature: 0.2,
+            scanlines: Some(Scanlines {
+                intensity: 0.1,
+                count: 300,
+            }),
+        };
+        assert!(validate_post_processing(&post).is_ok());
+    }
+
+    #[test]
+    fn test_validate_post_bloom_boundary() {
+        let post_zero = make_post(0.0, 0.0);
+        assert!(validate_post_processing(&post_zero).is_ok());
+
+        let post_one = make_post(1.0, 0.0);
+        assert!(validate_post_processing(&post_one).is_ok());
+    }
+
+    #[test]
+    fn test_validate_post_bloom_exceeds() {
+        let post = make_post(1.1, 0.0);
+        let result = validate_post_processing(&post);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("bloom"));
+            }
+            _ => panic!("Expected InvalidValue error about bloom"),
+        }
+    }
+
+    #[test]
+    fn test_validate_post_bloom_negative() {
+        let post = make_post(-0.1, 0.0);
+        let result = validate_post_processing(&post);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("bloom"));
+            }
+            _ => panic!("Expected InvalidValue error about bloom"),
+        }
+    }
+
+    #[test]
+    fn test_validate_post_chrom_ab_max() {
+        let post = make_post(0.0, 0.1);
+        assert!(validate_post_processing(&post).is_ok());
+    }
+
+    #[test]
+    fn test_validate_post_chrom_ab_exceeds() {
+        let post = make_post(0.0, 0.11);
+        let result = validate_post_processing(&post);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("chromatic_aberration"));
+            }
+            _ => panic!("Expected InvalidValue error about chromatic_aberration"),
+        }
+    }
+
+    #[test]
+    fn test_validate_post_chrom_ab_negative() {
+        let post = make_post(0.0, -0.01);
+        let result = validate_post_processing(&post);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("chromatic_aberration"));
+            }
+            _ => panic!("Expected InvalidValue error about chromatic_aberration"),
+        }
+    }
+
+    #[test]
+    fn test_validate_post_noise_boundary() {
+        let mut post = make_post(0.0, 0.0);
+        post.noise = 0.0;
+        assert!(validate_post_processing(&post).is_ok());
+
+        post.noise = 1.0;
+        assert!(validate_post_processing(&post).is_ok());
+    }
+
+    #[test]
+    fn test_validate_post_noise_exceeds() {
+        let mut post = make_post(0.0, 0.0);
+        post.noise = 1.1;
+        let result = validate_post_processing(&post);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("noise"));
+            }
+            _ => panic!("Expected InvalidValue error about noise"),
+        }
+    }
+
+    #[test]
+    fn test_validate_post_vignette_boundary() {
+        let mut post = make_post(0.0, 0.0);
+        post.vignette = 0.0;
+        assert!(validate_post_processing(&post).is_ok());
+
+        post.vignette = 1.0;
+        assert!(validate_post_processing(&post).is_ok());
+    }
+
+    #[test]
+    fn test_validate_post_vignette_exceeds() {
+        let mut post = make_post(0.0, 0.0);
+        post.vignette = 1.1;
+        let result = validate_post_processing(&post);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("vignette"));
+            }
+            _ => panic!("Expected InvalidValue error about vignette"),
+        }
+    }
+
+    #[test]
+    fn test_validate_post_crt_curvature_boundary() {
+        let mut post = make_post(0.0, 0.0);
+        post.crt_curvature = 0.0;
+        assert!(validate_post_processing(&post).is_ok());
+
+        post.crt_curvature = 1.0;
+        assert!(validate_post_processing(&post).is_ok());
+    }
+
+    #[test]
+    fn test_validate_post_crt_curvature_exceeds() {
+        let mut post = make_post(0.0, 0.0);
+        post.crt_curvature = 1.1;
+        let result = validate_post_processing(&post);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("crt_curvature"));
+            }
+            _ => panic!("Expected InvalidValue error about crt_curvature"),
+        }
+    }
+
+    #[test]
+    fn test_validate_post_scanlines_valid() {
+        let mut post = make_post(0.0, 0.0);
+        post.scanlines = Some(Scanlines {
+            intensity: 0.5,
+            count: 300,
+        });
+        assert!(validate_post_processing(&post).is_ok());
+    }
+
+    #[test]
+    fn test_validate_post_scanlines_intensity_boundary() {
+        let mut post = make_post(0.0, 0.0);
+
+        post.scanlines = Some(Scanlines {
+            intensity: 0.0,
+            count: 300,
+        });
+        assert!(validate_post_processing(&post).is_ok());
+
+        post.scanlines = Some(Scanlines {
+            intensity: 1.0,
+            count: 300,
+        });
+        assert!(validate_post_processing(&post).is_ok());
+    }
+
+    #[test]
+    fn test_validate_post_scanlines_intensity_exceeds() {
+        let mut post = make_post(0.0, 0.0);
+        post.scanlines = Some(Scanlines {
+            intensity: 1.1,
+            count: 300,
+        });
+        let result = validate_post_processing(&post);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("scanline intensity"));
+            }
+            _ => panic!("Expected InvalidValue error about scanline intensity"),
+        }
+    }
+
+    #[test]
+    fn test_validate_post_scanlines_zero_count() {
+        let mut post = make_post(0.0, 0.0);
+        post.scanlines = Some(Scanlines {
+            intensity: 0.1,
+            count: 0,
+        });
+        let result = validate_post_processing(&post);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("scanline count"));
+            }
+            _ => panic!("Expected InvalidValue error about scanline count"),
+        }
+    }
+
+    // ===========================================
+    // Thickness Validation Tests
+    // ===========================================
+
+    #[test]
+    fn test_validate_thickness_valid() {
+        assert!(validate_thickness(1.0).is_ok());
+        assert!(validate_thickness(0.1).is_ok());
+        assert!(validate_thickness(10.0).is_ok());
+    }
+
+    #[test]
+    fn test_validate_thickness_zero() {
+        let result = validate_thickness(0.0);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("thickness"));
+            }
+            _ => panic!("Expected InvalidValue error about thickness"),
+        }
+    }
+
+    #[test]
+    fn test_validate_thickness_negative() {
+        let result = validate_thickness(-1.0);
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidValue(msg)) => {
+                assert!(msg.contains("thickness"));
+            }
+            _ => panic!("Expected InvalidValue error about thickness"),
+        }
+    }
+
+    // ===========================================
+    // Existing Tests (Opacity and Scale)
+    // ===========================================
+
     #[test]
     fn test_validate_opacity_static_valid() {
         assert!(validate_opacity(&AnimatedValue::Static(0.0)).is_ok());
