@@ -20,7 +20,7 @@ pub fn spinning_cube() -> Scene {
                 divisions: 20,
                 fade_distance: 50.0,
                 color: "#00ff41".to_string(),
-                opacity: 0.3,
+                opacity: AnimatedValue::Static(0.3),
             }),
             Element::Wireframe(WireframeElement {
                 geometry: GeometryType::Cube,
@@ -33,7 +33,7 @@ pub fn spinning_cube() -> Scene {
                 scale: Scale::Uniform(1.0),
                 color: "#00ff41".to_string(),
                 thickness: 2.0,
-                opacity: 1.0,
+                opacity: AnimatedValue::Static(1.0),
             }),
         ],
         post: PostProcessing {
@@ -70,14 +70,14 @@ pub fn grid_flythrough() -> Scene {
                 divisions: 40,
                 fade_distance: 100.0,
                 color: "#00ff41".to_string(),
-                opacity: 0.5,
+                opacity: AnimatedValue::Static(0.5),
             }),
             Element::Axes(AxesElement {
                 length: 2.0,
                 colors: AxisColors::default(),
                 position: [0.0, 0.0, 0.0],
                 thickness: 3.0,
-                opacity: 1.0,
+                opacity: AnimatedValue::Static(1.0),
             }),
         ],
         post: PostProcessing {
@@ -116,7 +116,7 @@ pub fn text_terminal() -> Scene {
                 position: [0.0, 1.0, 0.0],
                 color: "#00ff41".to_string(),
                 animation: GlyphAnimation::Type,
-                opacity: 1.0,
+                opacity: AnimatedValue::Static(1.0),
             }),
             Element::Glyph(GlyphElement {
                 text: "> READY".to_string(),
@@ -124,7 +124,7 @@ pub fn text_terminal() -> Scene {
                 position: [0.0, 0.0, 0.0],
                 color: "#00ff41".to_string(),
                 animation: GlyphAnimation::Flicker,
-                opacity: 0.8,
+                opacity: AnimatedValue::Static(0.8),
             }),
             Element::Line(LineElement {
                 points: vec![[-2.0, -1.0, 0.0], [2.0, -1.0, 0.0]],
@@ -132,7 +132,7 @@ pub fn text_terminal() -> Scene {
                 thickness: 1.0,
                 glow: 0.5,
                 color: "#00ff41".to_string(),
-                opacity: 0.5,
+                opacity: AnimatedValue::Static(0.5),
             }),
         ],
         post: PostProcessing {

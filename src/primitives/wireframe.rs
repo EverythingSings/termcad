@@ -3,17 +3,16 @@ use crate::scene::{parse_hex_color, ExpressionContext, WireframeElement};
 
 pub struct WireframePrimitive {
     element: WireframeElement,
-    color: [f32; 4],
+    base_color: [f32; 4],
 }
 
 impl WireframePrimitive {
     pub fn from_element(element: &WireframeElement) -> Self {
-        let mut color = parse_hex_color(&element.color).unwrap_or([0.0, 1.0, 0.25, 1.0]);
-        color[3] = element.opacity;
+        let base_color = parse_hex_color(&element.color).unwrap_or([0.0, 1.0, 0.25, 1.0]);
 
         Self {
             element: element.clone(),
-            color,
+            base_color,
         }
     }
 
@@ -45,14 +44,24 @@ impl WireframePrimitive {
 impl Primitive for WireframePrimitive {
     fn vertices(&self, ctx: &ExpressionContext) -> Vec<LineVertex> {
         let geometry = generate_geometry(&self.element.geometry);
+
+        // Evaluate opacity at render time and clamp to valid range
+        let opacity = self.element.opacity.evaluate(ctx).clamp(0.0, 1.0);
+        let color = [
+            self.base_color[0],
+            self.base_color[1],
+            self.base_color[2],
+            opacity,
+        ];
+
         let mut vertices = Vec::new();
 
         for (start_idx, end_idx) in geometry.edges {
             let start = self.apply_transform(geometry.vertices[start_idx], ctx);
             let end = self.apply_transform(geometry.vertices[end_idx], ctx);
 
-            vertices.push(LineVertex::new(start, self.color));
-            vertices.push(LineVertex::new(end, self.color));
+            vertices.push(LineVertex::new(start, color));
+            vertices.push(LineVertex::new(end, color));
         }
 
         vertices

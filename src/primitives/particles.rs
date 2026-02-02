@@ -1,9 +1,10 @@
 use super::{LineVertex, Primitive};
-use crate::scene::{parse_hex_color, ExpressionContext, ParticlesElement};
+use crate::scene::{parse_hex_color, AnimatedValue, ExpressionContext, ParticlesElement};
 
 pub struct ParticlesPrimitive {
     positions: Vec<[f32; 3]>,
-    color: [f32; 4],
+    base_color: [f32; 4],
+    opacity: AnimatedValue,
     size: f32,
     depth_fade: bool,
     bounds: [f32; 3],
@@ -11,8 +12,7 @@ pub struct ParticlesPrimitive {
 
 impl ParticlesPrimitive {
     pub fn from_element(element: &ParticlesElement) -> Self {
-        let mut color = parse_hex_color(&element.color).unwrap_or([0.0, 1.0, 0.25, 1.0]);
-        color[3] = element.opacity;
+        let base_color = parse_hex_color(&element.color).unwrap_or([0.0, 1.0, 0.25, 1.0]);
 
         // Generate particle positions using a simple PRNG
         let mut positions = Vec::with_capacity(element.count as usize);
@@ -37,7 +37,8 @@ impl ParticlesPrimitive {
 
         Self {
             positions,
-            color,
+            base_color,
+            opacity: element.opacity.clone(),
             size: element.size,
             depth_fade: element.depth_fade,
             bounds: element.bounds,
@@ -46,21 +47,31 @@ impl ParticlesPrimitive {
 }
 
 impl Primitive for ParticlesPrimitive {
-    fn vertices(&self, _ctx: &ExpressionContext) -> Vec<LineVertex> {
+    fn vertices(&self, ctx: &ExpressionContext) -> Vec<LineVertex> {
         let mut vertices = Vec::new();
+
+        // Evaluate opacity at render time and clamp to valid range
+        let base_opacity = self.opacity.evaluate(ctx).clamp(0.0, 1.0);
 
         // Draw particles as small crosses
         let half_size = self.size * 0.02; // Scale down for world space
 
         for pos in &self.positions {
-            let mut color = self.color;
+            let mut opacity = base_opacity;
 
             // Apply depth fade based on Z position
             if self.depth_fade {
                 let max_z = self.bounds[2] / 2.0;
                 let fade = 1.0 - (pos[2].abs() / max_z).min(1.0) * 0.7;
-                color[3] *= fade;
+                opacity *= fade;
             }
+
+            let color = [
+                self.base_color[0],
+                self.base_color[1],
+                self.base_color[2],
+                opacity,
+            ];
 
             // Horizontal line
             vertices.push(LineVertex::new(

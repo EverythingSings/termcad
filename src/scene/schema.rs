@@ -119,7 +119,7 @@ pub struct GridElement {
     #[serde(default = "default_color")]
     pub color: String,
     #[serde(default = "default_opacity")]
-    pub opacity: f32,
+    pub opacity: AnimatedValue,
 }
 
 fn default_grid_divisions() -> u32 {
@@ -131,8 +131,8 @@ fn default_fade_distance() -> f32 {
 fn default_color() -> String {
     "#00ff41".to_string()
 }
-fn default_opacity() -> f32 {
-    0.5
+fn default_opacity() -> AnimatedValue {
+    AnimatedValue::Static(0.5)
 }
 
 impl Default for GridElement {
@@ -141,7 +141,7 @@ impl Default for GridElement {
             divisions: default_grid_divisions(),
             fade_distance: default_fade_distance(),
             color: default_color(),
-            opacity: default_opacity(),
+            opacity: AnimatedValue::Static(0.5),
         }
     }
 }
@@ -161,7 +161,7 @@ pub struct WireframeElement {
     #[serde(default = "default_thickness")]
     pub thickness: f32,
     #[serde(default = "default_full_opacity")]
-    pub opacity: f32,
+    pub opacity: AnimatedValue,
 }
 
 fn default_geometry() -> GeometryType {
@@ -173,8 +173,8 @@ fn default_scale() -> Scale {
 fn default_thickness() -> f32 {
     2.0
 }
-fn default_full_opacity() -> f32 {
-    1.0
+fn default_full_opacity() -> AnimatedValue {
+    AnimatedValue::Static(1.0)
 }
 
 impl Default for WireframeElement {
@@ -186,7 +186,7 @@ impl Default for WireframeElement {
             scale: default_scale(),
             color: default_color(),
             thickness: default_thickness(),
-            opacity: default_full_opacity(),
+            opacity: AnimatedValue::Static(1.0),
         }
     }
 }
@@ -268,7 +268,7 @@ pub struct GlyphElement {
     #[serde(default)]
     pub animation: GlyphAnimation,
     #[serde(default = "default_full_opacity")]
-    pub opacity: f32,
+    pub opacity: AnimatedValue,
 }
 
 fn default_font_size() -> f32 {
@@ -296,7 +296,7 @@ pub struct LineElement {
     #[serde(default = "default_color")]
     pub color: String,
     #[serde(default = "default_full_opacity")]
-    pub opacity: f32,
+    pub opacity: AnimatedValue,
 }
 
 fn default_glow() -> f32 {
@@ -316,7 +316,7 @@ pub struct ParticlesElement {
     #[serde(default = "default_color")]
     pub color: String,
     #[serde(default = "default_full_opacity")]
-    pub opacity: f32,
+    pub opacity: AnimatedValue,
     #[serde(default)]
     pub seed: u64,
 }
@@ -345,7 +345,7 @@ pub struct AxesElement {
     #[serde(default = "default_thickness")]
     pub thickness: f32,
     #[serde(default = "default_full_opacity")]
-    pub opacity: f32,
+    pub opacity: AnimatedValue,
 }
 
 fn default_axis_length() -> f32 {

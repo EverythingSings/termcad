@@ -3,17 +3,16 @@ use crate::scene::{parse_hex_color, ExpressionContext, GlyphAnimation, GlyphElem
 
 pub struct GlyphPrimitive {
     element: GlyphElement,
-    color: [f32; 4],
+    base_color: [f32; 4],
 }
 
 impl GlyphPrimitive {
     pub fn from_element(element: &GlyphElement) -> Self {
-        let mut color = parse_hex_color(&element.color).unwrap_or([0.0, 1.0, 0.25, 1.0]);
-        color[3] = element.opacity;
+        let base_color = parse_hex_color(&element.color).unwrap_or([0.0, 1.0, 0.25, 1.0]);
 
         Self {
             element: element.clone(),
-            color,
+            base_color,
         }
     }
 
@@ -30,12 +29,15 @@ impl GlyphPrimitive {
     }
 
     fn get_opacity(&self, ctx: &ExpressionContext) -> f32 {
+        // Evaluate base opacity from AnimatedValue
+        let base_opacity = self.element.opacity.evaluate(ctx).clamp(0.0, 1.0);
+
         match self.element.animation {
-            GlyphAnimation::None | GlyphAnimation::Type => self.element.opacity,
+            GlyphAnimation::None | GlyphAnimation::Type => base_opacity,
             GlyphAnimation::Flicker => {
                 // Simple flicker based on frame
                 let flicker = ((ctx.frame as f32 * 7.3).sin() * 0.5 + 0.5) * 0.3 + 0.7;
-                self.element.opacity * flicker
+                base_opacity * flicker
             }
         }
     }
@@ -45,8 +47,12 @@ impl Primitive for GlyphPrimitive {
     fn vertices(&self, ctx: &ExpressionContext) -> Vec<LineVertex> {
         let text = self.get_visible_text(ctx);
         let opacity = self.get_opacity(ctx);
-        let mut color = self.color;
-        color[3] *= opacity;
+        let color = [
+            self.base_color[0],
+            self.base_color[1],
+            self.base_color[2],
+            opacity,
+        ];
 
         let mut vertices = Vec::new();
         let char_width = self.element.font_size * 0.6;

@@ -86,7 +86,7 @@ fn validate_element(element: &Element) -> Result<(), ValidationError> {
 
 fn validate_grid(grid: &GridElement) -> Result<(), ValidationError> {
     validate_color(&grid.color)?;
-    validate_opacity(grid.opacity)?;
+    validate_opacity(&grid.opacity)?;
 
     if grid.divisions == 0 {
         return Err(ValidationError::InvalidValue(
@@ -105,7 +105,7 @@ fn validate_grid(grid: &GridElement) -> Result<(), ValidationError> {
 
 fn validate_wireframe(wf: &WireframeElement) -> Result<(), ValidationError> {
     validate_color(&wf.color)?;
-    validate_opacity(wf.opacity)?;
+    validate_opacity(&wf.opacity)?;
     validate_thickness(wf.thickness)?;
     validate_animated_rotation(&wf.rotation)?;
 
@@ -114,7 +114,7 @@ fn validate_wireframe(wf: &WireframeElement) -> Result<(), ValidationError> {
 
 fn validate_glyph(glyph: &GlyphElement) -> Result<(), ValidationError> {
     validate_color(&glyph.color)?;
-    validate_opacity(glyph.opacity)?;
+    validate_opacity(&glyph.opacity)?;
 
     if glyph.text.is_empty() {
         return Err(ValidationError::InvalidValue(
@@ -133,7 +133,7 @@ fn validate_glyph(glyph: &GlyphElement) -> Result<(), ValidationError> {
 
 fn validate_line(line: &LineElement) -> Result<(), ValidationError> {
     validate_color(&line.color)?;
-    validate_opacity(line.opacity)?;
+    validate_opacity(&line.opacity)?;
     validate_thickness(line.thickness)?;
 
     if line.points.len() < 2 {
@@ -153,7 +153,7 @@ fn validate_line(line: &LineElement) -> Result<(), ValidationError> {
 
 fn validate_particles(particles: &ParticlesElement) -> Result<(), ValidationError> {
     validate_color(&particles.color)?;
-    validate_opacity(particles.opacity)?;
+    validate_opacity(&particles.opacity)?;
 
     if particles.count == 0 {
         return Err(ValidationError::InvalidValue(
@@ -174,7 +174,7 @@ fn validate_axes(axes: &AxesElement) -> Result<(), ValidationError> {
     validate_color(&axes.colors.x)?;
     validate_color(&axes.colors.y)?;
     validate_color(&axes.colors.z)?;
-    validate_opacity(axes.opacity)?;
+    validate_opacity(&axes.opacity)?;
     validate_thickness(axes.thickness)?;
 
     if axes.length <= 0.0 {
@@ -243,11 +243,24 @@ fn validate_color(color: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-fn validate_opacity(opacity: f32) -> Result<(), ValidationError> {
-    if opacity < 0.0 || opacity > 1.0 {
-        return Err(ValidationError::InvalidValue(
-            "opacity must be between 0.0 and 1.0".to_string(),
-        ));
+fn validate_opacity(opacity: &AnimatedValue) -> Result<(), ValidationError> {
+    match opacity {
+        AnimatedValue::Static(v) => {
+            if *v < 0.0 || *v > 1.0 {
+                return Err(ValidationError::InvalidValue(
+                    "opacity must be between 0.0 and 1.0".to_string(),
+                ));
+            }
+        }
+        AnimatedValue::Expression(expr) => {
+            // Validate expression syntax by evaluating at t=0
+            let ctx = super::ExpressionContext::new(0, 30);
+            super::evaluate_expression(expr, &ctx).map_err(|e| {
+                ValidationError::InvalidExpression(format!("opacity '{}': {}", expr, e))
+            })?;
+            // Note: We cannot validate that runtime values stay in 0-1 range,
+            // but expressions are clamped in the primitives anyway
+        }
     }
     Ok(())
 }
@@ -278,6 +291,41 @@ fn validate_animated_value(value: &AnimatedValue, _name: &str) -> Result<(), Val
                 ValidationError::InvalidExpression(format!("'{}': {}", expr, e))
             })?;
             Ok(())
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_opacity_static_valid() {
+        assert!(validate_opacity(&AnimatedValue::Static(0.0)).is_ok());
+        assert!(validate_opacity(&AnimatedValue::Static(0.5)).is_ok());
+        assert!(validate_opacity(&AnimatedValue::Static(1.0)).is_ok());
+    }
+
+    #[test]
+    fn test_validate_opacity_static_invalid() {
+        assert!(validate_opacity(&AnimatedValue::Static(-0.1)).is_err());
+        assert!(validate_opacity(&AnimatedValue::Static(1.1)).is_err());
+    }
+
+    #[test]
+    fn test_validate_opacity_expression_valid() {
+        assert!(validate_opacity(&AnimatedValue::Expression("t".to_string())).is_ok());
+        assert!(validate_opacity(&AnimatedValue::Expression("1 - t".to_string())).is_ok());
+        assert!(validate_opacity(&AnimatedValue::Expression("sin(t * PI) * 0.5 + 0.5".to_string())).is_ok());
+    }
+
+    #[test]
+    fn test_validate_opacity_expression_invalid_syntax() {
+        let result = validate_opacity(&AnimatedValue::Expression("invalid syntax here".to_string()));
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidExpression(_)) => {}
+            _ => panic!("Expected InvalidExpression error"),
         }
     }
 }
