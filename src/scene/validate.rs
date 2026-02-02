@@ -274,8 +274,8 @@ fn validate_animated_value(value: &AnimatedValue, _name: &str) -> Result<(), Val
         AnimatedValue::Expression(expr) => {
             // Try to evaluate the expression with t=0 to check validity
             let ctx = super::ExpressionContext::new(0, 30);
-            super::evaluate_expression(expr, &ctx).ok_or_else(|| {
-                ValidationError::InvalidExpression(format!("Invalid expression: '{}'", expr))
+            super::evaluate_expression(expr, &ctx).map_err(|e| {
+                ValidationError::InvalidExpression(format!("'{}': {}", expr, e))
             })?;
             Ok(())
         }

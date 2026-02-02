@@ -90,36 +90,51 @@ fn main() -> ExitCode {
     }
 }
 
-#[derive(Debug)]
-#[allow(dead_code)]
+use output::{FrameWriteError, GifError};
+use render::RenderError;
+use scene::ValidationError;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
 enum TermcadError {
-    InvalidScene(String),
-    RenderError(String),
-    IoError(String),
-    DependencyMissing(String),
-    SerializationError(String),
+    #[error("Scene validation failed: {0}")]
+    Validation(#[from] ValidationError),
+
+    #[error("Failed to parse scene: {0}")]
+    Parse(#[source] serde_json::Error),
+
+    #[error("Render failed: {0}")]
+    Render(#[from] RenderError),
+
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("{0}")]
+    Gif(#[from] GifError),
+
+    #[error("{0}")]
+    FrameWrite(#[from] FrameWriteError),
+
+    #[error("Failed to serialize: {0}")]
+    Serialization(#[source] serde_json::Error),
+
+    #[error("Unknown template: {0}. Available: spinning-cube, grid-flythrough, text-terminal")]
+    UnknownTemplate(String),
+
+    #[error("Unknown primitive: {0}")]
+    UnknownPrimitive(String),
 }
 
 impl TermcadError {
     fn exit_code(&self) -> u8 {
         match self {
-            TermcadError::InvalidScene(_) => 1,
-            TermcadError::RenderError(_) => 2,
-            TermcadError::IoError(_) => 3,
-            TermcadError::DependencyMissing(_) => 4,
-            TermcadError::SerializationError(_) => 5,
-        }
-    }
-}
-
-impl std::fmt::Display for TermcadError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TermcadError::InvalidScene(msg) => write!(f, "Invalid scene: {}", msg),
-            TermcadError::RenderError(msg) => write!(f, "Render error: {}", msg),
-            TermcadError::IoError(msg) => write!(f, "IO error: {}", msg),
-            TermcadError::DependencyMissing(msg) => write!(f, "Dependency missing: {}", msg),
-            TermcadError::SerializationError(msg) => write!(f, "Serialization error: {}", msg),
+            TermcadError::Validation(_) | TermcadError::Parse(_) => 1,
+            TermcadError::Render(_) => 2,
+            TermcadError::Io(_) | TermcadError::FrameWrite(_) => 3,
+            TermcadError::Gif(GifError::FfmpegNotFound) => 4,
+            TermcadError::Gif(_) => 3,
+            TermcadError::Serialization(_) => 5,
+            TermcadError::UnknownTemplate(_) | TermcadError::UnknownPrimitive(_) => 1,
         }
     }
 }
@@ -131,16 +146,13 @@ fn cmd_render(
     json_output: bool,
 ) -> Result<(), TermcadError> {
     // Load and parse scene
-    let scene_str = std::fs::read_to_string(&scene_path)
-        .map_err(|e| TermcadError::IoError(format!("Failed to read scene file: {}", e)))?;
+    let scene_str = std::fs::read_to_string(&scene_path)?;
 
-    let scene: Scene = serde_json::from_str(&scene_str)
-        .map_err(|e| TermcadError::InvalidScene(format!("Parse error: {}", e)))?;
+    let scene: Scene =
+        serde_json::from_str(&scene_str).map_err(TermcadError::Parse)?;
 
     // Validate scene
-    scene
-        .validate()
-        .map_err(|e| TermcadError::InvalidScene(e.to_string()))?;
+    scene.validate()?;
 
     // Determine output path
     let output_path = output.unwrap_or_else(|| {
@@ -160,17 +172,12 @@ fn cmd_render(
         );
     }
 
-    let renderer = render::Renderer::new(&scene)
-        .map_err(|e| TermcadError::RenderError(format!("Failed to initialize renderer: {}", e)))?;
-
-    let frames = renderer
-        .render_all(json_output)
-        .map_err(|e| TermcadError::RenderError(e.to_string()))?;
+    let renderer = render::Renderer::new(&scene)?;
+    let frames = renderer.render_all(json_output)?;
 
     if frames_mode {
         // Output PNG frames
-        output::write_frames(&output_path, &frames)
-            .map_err(|e| TermcadError::IoError(e.to_string()))?;
+        output::write_frames(&output_path, &frames)?;
 
         if json_output {
             println!(
@@ -194,8 +201,7 @@ fn cmd_render(
             println!("{}", serde_json::json!({"status": "assembling"}));
         }
 
-        let size_bytes = output::assemble_gif(&output_path, &frames, scene.fps)
-            .map_err(|e| TermcadError::IoError(e.to_string()))?;
+        let size_bytes = output::assemble_gif(&output_path, &frames, scene.fps)?;
 
         if json_output {
             println!(
@@ -216,15 +222,12 @@ fn cmd_render(
 }
 
 fn cmd_validate(scene_path: PathBuf) -> Result<(), TermcadError> {
-    let scene_str = std::fs::read_to_string(&scene_path)
-        .map_err(|e| TermcadError::IoError(format!("Failed to read scene file: {}", e)))?;
+    let scene_str = std::fs::read_to_string(&scene_path)?;
 
-    let scene: Scene = serde_json::from_str(&scene_str)
-        .map_err(|e| TermcadError::InvalidScene(format!("Parse error: {}", e)))?;
+    let scene: Scene =
+        serde_json::from_str(&scene_str).map_err(TermcadError::Parse)?;
 
-    scene
-        .validate()
-        .map_err(|e| TermcadError::InvalidScene(e.to_string()))?;
+    scene.validate()?;
 
     println!("Scene is valid");
     println!("  Canvas: {}x{}", scene.canvas.width, scene.canvas.height);
@@ -241,15 +244,11 @@ fn cmd_init(template: Option<String>) -> Result<(), TermcadError> {
         Some("grid-flythrough") => scene::templates::grid_flythrough(),
         Some("text-terminal") => scene::templates::text_terminal(),
         Some(name) => {
-            return Err(TermcadError::InvalidScene(format!(
-                "Unknown template: {}. Available: spinning-cube, grid-flythrough, text-terminal",
-                name
-            )));
+            return Err(TermcadError::UnknownTemplate(name.to_string()));
         }
     };
 
-    let json = serde_json::to_string_pretty(&scene)
-        .map_err(|e| TermcadError::SerializationError(e.to_string()))?;
+    let json = serde_json::to_string_pretty(&scene).map_err(TermcadError::Serialization)?;
     println!("{}", json);
     Ok(())
 }
@@ -328,10 +327,7 @@ fn cmd_primitives(name: Option<String>) -> Result<(), TermcadError> {
             println!("  thickness   Line width in pixels (default: 2.0)");
         }
         Some(name) => {
-            return Err(TermcadError::InvalidScene(format!(
-                "Unknown primitive: {}",
-                name
-            )));
+            return Err(TermcadError::UnknownPrimitive(name.to_string()));
         }
     }
     Ok(())
@@ -366,4 +362,93 @@ fn cmd_info(json: bool) -> Result<(), TermcadError> {
         println!("Output: GIF, PNG frames");
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validation_error_exit_code() {
+        let err = TermcadError::Validation(ValidationError::InvalidDimensions(
+            "test".to_string(),
+        ));
+        assert_eq!(err.exit_code(), 1);
+    }
+
+    #[test]
+    fn test_parse_error_exit_code() {
+        let json_err = serde_json::from_str::<Scene>("invalid").unwrap_err();
+        let err = TermcadError::Parse(json_err);
+        assert_eq!(err.exit_code(), 1);
+    }
+
+    #[test]
+    fn test_io_error_exit_code() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
+        let err = TermcadError::Io(io_err);
+        assert_eq!(err.exit_code(), 3);
+    }
+
+    #[test]
+    fn test_ffmpeg_not_found_exit_code() {
+        let err = TermcadError::Gif(GifError::FfmpegNotFound);
+        assert_eq!(err.exit_code(), 4);
+    }
+
+    #[test]
+    fn test_gif_error_other_exit_code() {
+        let err = TermcadError::Gif(GifError::TempDirError("test".to_string()));
+        assert_eq!(err.exit_code(), 3);
+    }
+
+    #[test]
+    fn test_unknown_template_exit_code() {
+        let err = TermcadError::UnknownTemplate("test".to_string());
+        assert_eq!(err.exit_code(), 1);
+    }
+
+    #[test]
+    fn test_unknown_primitive_exit_code() {
+        let err = TermcadError::UnknownPrimitive("test".to_string());
+        assert_eq!(err.exit_code(), 1);
+    }
+
+    #[test]
+    fn test_validation_error_display() {
+        let err = TermcadError::Validation(ValidationError::InvalidColor(
+            "'xyz' is not a valid hex color".to_string(),
+        ));
+        let msg = format!("{}", err);
+        assert!(msg.contains("validation failed"));
+        assert!(msg.contains("Invalid color"));
+    }
+
+    #[test]
+    fn test_error_from_validation() {
+        let validation_err = ValidationError::InvalidValue("test".to_string());
+        let termcad_err: TermcadError = validation_err.into();
+        assert!(matches!(termcad_err, TermcadError::Validation(_)));
+    }
+
+    #[test]
+    fn test_error_from_io() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
+        let termcad_err: TermcadError = io_err.into();
+        assert!(matches!(termcad_err, TermcadError::Io(_)));
+    }
+
+    #[test]
+    fn test_error_from_gif() {
+        let gif_err = GifError::FfmpegNotFound;
+        let termcad_err: TermcadError = gif_err.into();
+        assert!(matches!(termcad_err, TermcadError::Gif(_)));
+    }
+
+    #[test]
+    fn test_error_from_frame_write() {
+        let frame_err = FrameWriteError::DirectoryError("test".to_string());
+        let termcad_err: TermcadError = frame_err.into();
+        assert!(matches!(termcad_err, TermcadError::FrameWrite(_)));
+    }
 }

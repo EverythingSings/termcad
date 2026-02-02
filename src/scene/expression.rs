@@ -1,5 +1,15 @@
-use evalexpr::{context_map, eval_float_with_context};
+use evalexpr::{context_map, eval_float_with_context, EvalexprError};
 use std::f32::consts::{PI, TAU};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum ExpressionError {
+    #[error("Failed to create evaluation context")]
+    ContextCreationFailed,
+
+    #[error("Expression evaluation failed: {0}")]
+    EvaluationFailed(#[from] EvalexprError),
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct ExpressionContext {
@@ -23,7 +33,7 @@ impl ExpressionContext {
     }
 }
 
-pub fn evaluate_expression(expr: &str, ctx: &ExpressionContext) -> Option<f32> {
+pub fn evaluate_expression(expr: &str, ctx: &ExpressionContext) -> Result<f32, ExpressionError> {
     let context = context_map! {
         "t" => ctx.t as f64,
         "frame" => ctx.frame as i64,
@@ -31,14 +41,13 @@ pub fn evaluate_expression(expr: &str, ctx: &ExpressionContext) -> Option<f32> {
         "PI" => PI as f64,
         "TAU" => TAU as f64,
     }
-    .ok()?;
+    .map_err(|_| ExpressionError::ContextCreationFailed)?;
 
     // Pre-process expression to handle custom functions
     let processed = preprocess_expression(expr);
 
-    eval_float_with_context(&processed, &context)
-        .ok()
-        .map(|v| v as f32)
+    let result = eval_float_with_context(&processed, &context)?;
+    Ok(result as f32)
 }
 
 fn preprocess_expression(expr: &str) -> String {
@@ -91,21 +100,35 @@ mod tests {
         let ctx = ExpressionContext::new(15, 30);
         assert!((ctx.t - 0.5172).abs() < 0.01);
 
-        let result = evaluate_expression("t * 360", &ctx).unwrap();
+        let result = evaluate_expression("t * 360", &ctx).expect("expression should evaluate");
         assert!((result - 186.2).abs() < 1.0);
     }
 
     #[test]
     fn test_constants() {
         let ctx = ExpressionContext::new(0, 30);
-        let result = evaluate_expression("PI", &ctx).unwrap();
+        let result = evaluate_expression("PI", &ctx).expect("PI should evaluate");
         assert!((result - PI).abs() < 0.001);
     }
 
     #[test]
     fn test_trig() {
         let ctx = ExpressionContext::new(0, 30);
-        let result = evaluate_expression("sin(0)", &ctx).unwrap();
+        let result = evaluate_expression("sin(0)", &ctx).expect("sin(0) should evaluate");
         assert!(result.abs() < 0.001);
+    }
+
+    #[test]
+    fn test_invalid_expression_returns_error() {
+        let ctx = ExpressionContext::new(0, 30);
+        let result = evaluate_expression("undefined_var + 1", &ctx);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_syntax_error_returns_error() {
+        let ctx = ExpressionContext::new(0, 30);
+        let result = evaluate_expression("1 + + 2", &ctx);
+        assert!(result.is_err());
     }
 }
