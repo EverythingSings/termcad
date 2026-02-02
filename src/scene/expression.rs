@@ -68,6 +68,17 @@ fn preprocess_expression(expr: &str) -> String {
         result = result.replace("ease_out(t)", "(1.0 - (1.0 - t) * (1.0 - t))");
     }
 
+    // Add math:: prefix to trig functions for evalexpr compatibility
+    // This allows users to write sin(x) instead of math::sin(x)
+    for func in ["sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh", "sqrt", "abs", "floor", "ceil", "round"] {
+        let pattern = format!("{}(", func);
+        let replacement = format!("math::{}(", func);
+        // Only replace if not already prefixed with math::
+        if result.contains(&pattern) && !result.contains(&replacement) {
+            result = result.replace(&pattern, &replacement);
+        }
+    }
+
     result
 }
 
