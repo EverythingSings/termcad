@@ -17,7 +17,7 @@ impl WireframePrimitive {
     }
 
     fn apply_transform(&self, point: [f32; 3], ctx: &ExpressionContext) -> [f32; 3] {
-        let scale = self.element.scale.to_vec3();
+        let scale = self.element.scale.evaluate(ctx);
 
         // Apply scale
         let mut p = [point[0] * scale[0], point[1] * scale[1], point[2] * scale[2]];

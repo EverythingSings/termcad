@@ -202,11 +202,36 @@ pub enum GeometryType {
     Cylinder,
 }
 
+/// Animated scale with per-axis expression support.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AnimatedScale {
+    #[serde(default = "default_scale_axis")]
+    pub x: AnimatedValue,
+    #[serde(default = "default_scale_axis")]
+    pub y: AnimatedValue,
+    #[serde(default = "default_scale_axis")]
+    pub z: AnimatedValue,
+}
+
+fn default_scale_axis() -> AnimatedValue {
+    AnimatedValue::Static(1.0)
+}
+
+/// Scale for wireframe elements, supporting static and animated values.
+///
+/// Supports multiple JSON formats:
+/// - Uniform static: `1.5`
+/// - Non-uniform static: `[2.0, 1.0, 2.0]`
+/// - Uniform expression: `"t * 4 + 1"`
+/// - Per-axis animated: `{ "x": "1 + sin(t * PI)", "y": 1.0, "z": 1.0 }`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Scale {
-    Uniform(f32),
+    // Order matters for serde untagged: objects first, then strings, then arrays, then numbers
+    PerAxis(AnimatedScale),
+    UniformExpression(String),
     NonUniform([f32; 3]),
+    Uniform(f32),
 }
 
 impl Default for Scale {
@@ -216,10 +241,20 @@ impl Default for Scale {
 }
 
 impl Scale {
-    pub fn to_vec3(&self) -> [f32; 3] {
+    /// Evaluate the scale at the given frame context.
+    pub fn evaluate(&self, ctx: &super::ExpressionContext) -> [f32; 3] {
         match self {
             Scale::Uniform(s) => [*s, *s, *s],
             Scale::NonUniform(v) => *v,
+            Scale::UniformExpression(expr) => {
+                let s = super::evaluate_expression(expr, ctx).unwrap_or(1.0);
+                [s, s, s]
+            }
+            Scale::PerAxis(animated) => [
+                animated.x.evaluate(ctx),
+                animated.y.evaluate(ctx),
+                animated.z.evaluate(ctx),
+            ],
         }
     }
 }
@@ -424,4 +459,128 @@ pub fn parse_hex_color(hex: &str) -> Option<[f32; 4]> {
     let b = u8::from_str_radix(&hex[4..6], 16).ok()?;
 
     Some([r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_scale_uniform_evaluate() {
+        let scale = Scale::Uniform(2.5);
+        let ctx = super::super::ExpressionContext::new(0, 30);
+        assert_eq!(scale.evaluate(&ctx), [2.5, 2.5, 2.5]);
+    }
+
+    #[test]
+    fn test_scale_non_uniform_evaluate() {
+        let scale = Scale::NonUniform([1.0, 2.0, 3.0]);
+        let ctx = super::super::ExpressionContext::new(0, 30);
+        assert_eq!(scale.evaluate(&ctx), [1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn test_scale_uniform_expression_evaluate() {
+        let scale = Scale::UniformExpression("t * 4 + 1".to_string());
+
+        // At frame 0, t = 0, so result = 0 * 4 + 1 = 1
+        let ctx_start = super::super::ExpressionContext::new(0, 30);
+        assert_eq!(scale.evaluate(&ctx_start), [1.0, 1.0, 1.0]);
+
+        // At last frame, t = 1, so result = 1 * 4 + 1 = 5
+        let ctx_end = super::super::ExpressionContext::new(29, 30);
+        assert_eq!(scale.evaluate(&ctx_end), [5.0, 5.0, 5.0]);
+    }
+
+    #[test]
+    fn test_scale_per_axis_evaluate() {
+        let scale = Scale::PerAxis(AnimatedScale {
+            x: AnimatedValue::Expression("t * 2 + 1".to_string()),
+            y: AnimatedValue::Static(1.0),
+            z: AnimatedValue::Expression("t * 2 + 1".to_string()),
+        });
+
+        // At t = 0 (frame 0)
+        let ctx = super::super::ExpressionContext::new(0, 30);
+        let result = scale.evaluate(&ctx);
+        assert_eq!(result[0], 1.0); // 0 * 2 + 1 = 1
+        assert_eq!(result[1], 1.0); // static
+        assert_eq!(result[2], 1.0); // 0 * 2 + 1 = 1
+
+        // At t = 1 (last frame)
+        let ctx_end = super::super::ExpressionContext::new(29, 30);
+        let result_end = scale.evaluate(&ctx_end);
+        assert_eq!(result_end[0], 3.0); // 1 * 2 + 1 = 3
+        assert_eq!(result_end[1], 1.0); // static
+        assert_eq!(result_end[2], 3.0); // 1 * 2 + 1 = 3
+    }
+
+    #[test]
+    fn test_scale_deserialize_uniform() {
+        let json = "1.5";
+        let scale: Scale = serde_json::from_str(json).unwrap();
+        match scale {
+            Scale::Uniform(s) => assert_eq!(s, 1.5),
+            _ => panic!("Expected Scale::Uniform"),
+        }
+    }
+
+    #[test]
+    fn test_scale_deserialize_non_uniform() {
+        // Arrays like [2.0, 1.0, 3.0] are parsed as PerAxis with static values
+        // This is functionally equivalent to NonUniform - verify by evaluation
+        let json = "[2.0, 1.0, 3.0]";
+        let scale: Scale = serde_json::from_str(json).unwrap();
+        let ctx = super::super::ExpressionContext::new(0, 30);
+        assert_eq!(scale.evaluate(&ctx), [2.0, 1.0, 3.0]);
+    }
+
+    #[test]
+    fn test_scale_deserialize_uniform_expression() {
+        let json = r#""t * 4 + 1""#;
+        let scale: Scale = serde_json::from_str(json).unwrap();
+        match scale {
+            Scale::UniformExpression(expr) => assert_eq!(expr, "t * 4 + 1"),
+            _ => panic!("Expected Scale::UniformExpression"),
+        }
+    }
+
+    #[test]
+    fn test_scale_deserialize_per_axis() {
+        let json = r#"{ "x": "t * 2 + 1", "y": 1.0, "z": "t * 2 + 1" }"#;
+        let scale: Scale = serde_json::from_str(json).unwrap();
+        match scale {
+            Scale::PerAxis(animated) => {
+                match &animated.x {
+                    AnimatedValue::Expression(e) => assert_eq!(e, "t * 2 + 1"),
+                    _ => panic!("Expected Expression for x"),
+                }
+                match animated.y {
+                    AnimatedValue::Static(v) => assert_eq!(v, 1.0),
+                    _ => panic!("Expected Static for y"),
+                }
+                match &animated.z {
+                    AnimatedValue::Expression(e) => assert_eq!(e, "t * 2 + 1"),
+                    _ => panic!("Expected Expression for z"),
+                }
+            }
+            _ => panic!("Expected Scale::PerAxis"),
+        }
+    }
+
+    #[test]
+    fn test_scale_per_axis_default_values() {
+        // When only some axes are specified, others default to 1.0
+        let json = r#"{ "x": 2.0 }"#;
+        let scale: Scale = serde_json::from_str(json).unwrap();
+        match scale {
+            Scale::PerAxis(animated) => {
+                let ctx = super::super::ExpressionContext::new(0, 30);
+                assert_eq!(animated.x.evaluate(&ctx), 2.0);
+                assert_eq!(animated.y.evaluate(&ctx), 1.0); // default
+                assert_eq!(animated.z.evaluate(&ctx), 1.0); // default
+            }
+            _ => panic!("Expected Scale::PerAxis"),
+        }
+    }
 }

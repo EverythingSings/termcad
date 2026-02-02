@@ -108,7 +108,40 @@ fn validate_wireframe(wf: &WireframeElement) -> Result<(), ValidationError> {
     validate_opacity(&wf.opacity)?;
     validate_thickness(wf.thickness)?;
     validate_animated_rotation(&wf.rotation)?;
+    validate_scale(&wf.scale)?;
 
+    Ok(())
+}
+
+fn validate_scale(scale: &Scale) -> Result<(), ValidationError> {
+    match scale {
+        Scale::Uniform(s) => {
+            if *s <= 0.0 {
+                return Err(ValidationError::InvalidValue("scale must be positive".into()));
+            }
+        }
+        Scale::NonUniform(v) => {
+            for (i, s) in v.iter().enumerate() {
+                if *s <= 0.0 {
+                    return Err(ValidationError::InvalidValue(format!(
+                        "scale[{}] must be positive",
+                        i
+                    )));
+                }
+            }
+        }
+        Scale::UniformExpression(expr) => {
+            let ctx = super::ExpressionContext::new(0, 30);
+            super::evaluate_expression(expr, &ctx).map_err(|e| {
+                ValidationError::InvalidExpression(format!("scale '{}': {}", expr, e))
+            })?;
+        }
+        Scale::PerAxis(animated) => {
+            validate_animated_value(&animated.x, "scale.x")?;
+            validate_animated_value(&animated.y, "scale.y")?;
+            validate_animated_value(&animated.z, "scale.z")?;
+        }
+    }
     Ok(())
 }
 
@@ -322,6 +355,73 @@ mod tests {
     #[test]
     fn test_validate_opacity_expression_invalid_syntax() {
         let result = validate_opacity(&AnimatedValue::Expression("invalid syntax here".to_string()));
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidExpression(_)) => {}
+            _ => panic!("Expected InvalidExpression error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_scale_uniform_valid() {
+        assert!(validate_scale(&Scale::Uniform(1.0)).is_ok());
+        assert!(validate_scale(&Scale::Uniform(0.5)).is_ok());
+        assert!(validate_scale(&Scale::Uniform(10.0)).is_ok());
+    }
+
+    #[test]
+    fn test_validate_scale_uniform_invalid() {
+        assert!(validate_scale(&Scale::Uniform(0.0)).is_err());
+        assert!(validate_scale(&Scale::Uniform(-1.0)).is_err());
+    }
+
+    #[test]
+    fn test_validate_scale_non_uniform_valid() {
+        assert!(validate_scale(&Scale::NonUniform([1.0, 2.0, 3.0])).is_ok());
+        assert!(validate_scale(&Scale::NonUniform([0.1, 0.1, 0.1])).is_ok());
+    }
+
+    #[test]
+    fn test_validate_scale_non_uniform_invalid() {
+        assert!(validate_scale(&Scale::NonUniform([0.0, 1.0, 1.0])).is_err());
+        assert!(validate_scale(&Scale::NonUniform([1.0, -1.0, 1.0])).is_err());
+        assert!(validate_scale(&Scale::NonUniform([1.0, 1.0, 0.0])).is_err());
+    }
+
+    #[test]
+    fn test_validate_scale_uniform_expression_valid() {
+        assert!(validate_scale(&Scale::UniformExpression("t * 4 + 1".to_string())).is_ok());
+        assert!(validate_scale(&Scale::UniformExpression("1 + sin(t * PI) * 0.5".to_string())).is_ok());
+    }
+
+    #[test]
+    fn test_validate_scale_uniform_expression_invalid() {
+        let result = validate_scale(&Scale::UniformExpression("invalid syntax".to_string()));
+        assert!(result.is_err());
+        match result {
+            Err(ValidationError::InvalidExpression(_)) => {}
+            _ => panic!("Expected InvalidExpression error"),
+        }
+    }
+
+    #[test]
+    fn test_validate_scale_per_axis_valid() {
+        let scale = Scale::PerAxis(AnimatedScale {
+            x: AnimatedValue::Expression("t * 2 + 1".to_string()),
+            y: AnimatedValue::Static(1.0),
+            z: AnimatedValue::Expression("1 + sin(t * PI)".to_string()),
+        });
+        assert!(validate_scale(&scale).is_ok());
+    }
+
+    #[test]
+    fn test_validate_scale_per_axis_invalid_expression() {
+        let scale = Scale::PerAxis(AnimatedScale {
+            x: AnimatedValue::Expression("invalid".to_string()),
+            y: AnimatedValue::Static(1.0),
+            z: AnimatedValue::Static(1.0),
+        });
+        let result = validate_scale(&scale);
         assert!(result.is_err());
         match result {
             Err(ValidationError::InvalidExpression(_)) => {}
