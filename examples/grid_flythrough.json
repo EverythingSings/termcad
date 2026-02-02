@@ -1,0 +1,49 @@
+{
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#0a0a0a"
+  },
+  "camera": {
+    "position": [0, 2, 10],
+    "target": [0, 0, 0],
+    "fov": 60
+  },
+  "duration": 3.0,
+  "fps": 30,
+  "loop": true,
+  "elements": [
+    {
+      "type": "grid",
+      "divisions": 40,
+      "fade_distance": 100,
+      "color": "#00ff41",
+      "opacity": 0.5
+    },
+    {
+      "type": "axes",
+      "length": 2,
+      "position": [0, 0, 0],
+      "thickness": 3.0
+    },
+    {
+      "type": "wireframe",
+      "geometry": "torus",
+      "position": [0, 1, 0],
+      "rotation": {
+        "x": "t * 180",
+        "y": "t * 360"
+      },
+      "scale": 0.8,
+      "color": "#ff0066",
+      "thickness": 2.0
+    }
+  ],
+  "post": {
+    "bloom": 0.4,
+    "scanlines": { "intensity": 0.15, "count": 400 },
+    "chromatic_aberration": 0.003,
+    "noise": 0.03,
+    "vignette": 0.4
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "canvas": {
+    "width": 400,
+    "height": 300,
+    "background": "#222222"
+  },
+  "camera": {
+    "position": [3, 3, 3],
+    "target": [0, 0, 0],
+    "fov": 60
+  },
+  "duration": 1.0,
+  "fps": 10,
+  "elements": [
+    {
+      "type": "wireframe",
+      "geometry": "cube",
+      "color": "#ff0000",
+      "thickness": 3.0
+    }
+  ],
+  "post": {}
+}

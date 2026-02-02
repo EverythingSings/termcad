@@ -1,0 +1,72 @@
+{
+  "canvas": {
+    "width": 600,
+    "height": 400,
+    "background": "#000000"
+  },
+  "camera": {
+    "position": [0, 0, 6],
+    "target": [0, 0, 0],
+    "fov": 45
+  },
+  "duration": 3.0,
+  "fps": 20,
+  "elements": [
+    {
+      "type": "glyph",
+      "text": "INITIALIZING...",
+      "font_size": 0.35,
+      "position": [0, 1.5, 0],
+      "color": "#00ff41",
+      "animation": "type"
+    },
+    {
+      "type": "glyph",
+      "text": "CORE SYSTEMS",
+      "font_size": 0.25,
+      "position": [0, 0.8, 0],
+      "color": "#00ff41",
+      "animation": "flicker",
+      "opacity": 0.9
+    },
+    {
+      "type": "glyph",
+      "text": "> ONLINE",
+      "font_size": 0.25,
+      "position": [0, 0.3, 0],
+      "color": "#00ff41",
+      "animation": "type"
+    },
+    {
+      "type": "line",
+      "points": [[-2.5, -0.2, 0], [2.5, -0.2, 0]],
+      "color": "#00ff41",
+      "thickness": 1.0,
+      "opacity": 0.6
+    },
+    {
+      "type": "line",
+      "points": [[-2.5, -0.8, 0], [-2.5, -1.2, 0], [2.5, -1.2, 0], [2.5, -0.8, 0], [-2.5, -0.8, 0]],
+      "color": "#00ff41",
+      "thickness": 1.5,
+      "closed": false,
+      "opacity": 0.8
+    },
+    {
+      "type": "glyph",
+      "text": "STATUS: OK",
+      "font_size": 0.2,
+      "position": [0, -1.0, 0],
+      "color": "#00ff41",
+      "animation": "flicker"
+    }
+  ],
+  "post": {
+    "bloom": 0.4,
+    "scanlines": { "intensity": 0.25, "count": 200 },
+    "chromatic_aberration": 0.005,
+    "noise": 0.06,
+    "vignette": 0.6,
+    "crt_curvature": 0.02
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "canvas": {
+    "width": 640,
+    "height": 480,
+    "background": "#050510"
+  },
+  "camera": {
+    "position": [0, 3, 8],
+    "target": [0, 0, 0],
+    "fov": 55
+  },
+  "duration": 3.0,
+  "fps": 24,
+  "elements": [
+    {
+      "type": "grid",
+      "divisions": 30,
+      "fade_distance": 40,
+      "color": "#0066ff",
+      "opacity": 0.4
+    },
+    {
+      "type": "wireframe",
+      "geometry": "ico",
+      "position": [0, 1.5, 0],
+      "rotation": {
+        "x": "t * 180",
+        "y": "t * 360",
+        "z": "t * 45"
+      },
+      "scale": 1.2,
+      "color": "#00ffff",
+      "thickness": 2.0
+    },
+    {
+      "type": "wireframe",
+      "geometry": "cube",
+      "position": [-3, 0.8, -2],
+      "rotation": { "y": "t * -180" },
+      "scale": 0.6,
+      "color": "#ff00ff",
+      "thickness": 1.5
+    },
+    {
+      "type": "wireframe",
+      "geometry": "cube",
+      "position": [3, 0.8, -2],
+      "rotation": { "y": "t * 180" },
+      "scale": 0.6,
+      "color": "#ff00ff",
+      "thickness": 1.5
+    },
+    {
+      "type": "glyph",
+      "text": "NEURAL LINK ACTIVE",
+      "font_size": 0.25,
+      "position": [0, 3.5, 0],
+      "color": "#00ffff",
+      "animation": "type"
+    },
+    {
+      "type": "particles",
+      "count": 80,
+      "bounds": [12, 6, 8],
+      "size": 1.5,
+      "color": "#0088ff",
+      "opacity": 0.5,
+      "depth_fade": true
+    }
+  ],
+  "post": {
+    "bloom": 0.6,
+    "scanlines": { "intensity": 0.15, "count": 240 },
+    "chromatic_aberration": 0.004,
+    "noise": 0.04,
+    "vignette": 0.5
+  }
+}

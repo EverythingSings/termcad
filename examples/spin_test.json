@@ -1,0 +1,30 @@
+{
+  "canvas": {
+    "width": 400,
+    "height": 300,
+    "background": "#111111"
+  },
+  "camera": {
+    "position": [4, 1, 0],
+    "target": [0, 0, 0],
+    "fov": 50
+  },
+  "duration": 2.0,
+  "fps": 15,
+  "elements": [
+    {
+      "type": "wireframe",
+      "geometry": "torus",
+      "position": [0, 0, 0],
+      "rotation": { "x": "t * 360" },
+      "color": "#ff00ff",
+      "thickness": 2.0
+    },
+    {
+      "type": "axes",
+      "length": 1.5,
+      "position": [0, 0, 0]
+    }
+  ],
+  "post": {}
+}

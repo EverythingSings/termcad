@@ -1,0 +1,58 @@
+{
+  "canvas": {
+    "width": 800,
+    "height": 600,
+    "background": "#0a0a0a"
+  },
+  "camera": {
+    "position": [0, 0, 5],
+    "target": [0, 0, 0],
+    "fov": 45
+  },
+  "duration": 2.0,
+  "fps": 30,
+  "loop": true,
+  "elements": [
+    {
+      "type": "glyph",
+      "text": "SYSTEM ONLINE",
+      "font_size": 0.5,
+      "position": [0, 1, 0],
+      "color": "#00ff41",
+      "animation": "type"
+    },
+    {
+      "type": "glyph",
+      "text": "> READY",
+      "font_size": 0.3,
+      "position": [0, 0, 0],
+      "color": "#00ff41",
+      "animation": "flicker",
+      "opacity": 0.8
+    },
+    {
+      "type": "line",
+      "points": [[-2, -1, 0], [2, -1, 0]],
+      "thickness": 1.0,
+      "glow": 0.5,
+      "color": "#00ff41",
+      "opacity": 0.5
+    },
+    {
+      "type": "particles",
+      "count": 50,
+      "bounds": [8, 6, 2],
+      "size": 1.5,
+      "color": "#00ff41",
+      "opacity": 0.3,
+      "depth_fade": true
+    }
+  ],
+  "post": {
+    "bloom": 0.5,
+    "scanlines": { "intensity": 0.2, "count": 300 },
+    "chromatic_aberration": 0.004,
+    "noise": 0.05,
+    "vignette": 0.5
+  }
+}
