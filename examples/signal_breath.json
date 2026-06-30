@@ -1,0 +1,102 @@
+{
+  "canvas": {
+    "width": 640,
+    "height": 480,
+    "background": "#030308"
+  },
+  "camera": {
+    "position": [6, 4, 6],
+    "target": [0, 1, 0],
+    "fov": 45
+  },
+  "duration": 3.0,
+  "fps": 24,
+  "elements": [
+    {
+      "type": "grid",
+      "divisions": 40,
+      "fade_distance": 50,
+      "color": "#0044aa",
+      "opacity": "sin(t * PI * 2) * 0.15 + 0.25"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "ico",
+      "position": [0, 1.5, 0],
+      "rotation": { "y": "t * 120", "x": "t * 60" },
+      "scale": 1.2,
+      "color": "#00ffff",
+      "thickness": 2.0,
+      "opacity": "sin(t * PI * 2) * 0.4 + 0.6"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "ico",
+      "position": [0, 1.5, 0],
+      "rotation": { "y": "t * -80", "z": "t * 40" },
+      "scale": 0.7,
+      "color": "#ffffff",
+      "thickness": 1.5,
+      "opacity": "cos(t * PI * 2) * 0.4 + 0.6"
+    },
+    {
+      "type": "line",
+      "points": [[0, 1.5, 0], [0, 4, 0]],
+      "color": "#00ffff",
+      "thickness": 2.0,
+      "opacity": "sin(t * PI * 4) * 0.5 + 0.5"
+    },
+    {
+      "type": "line",
+      "points": [[0, 1.5, 0], [2.5, 1.5, 0]],
+      "color": "#0066ff",
+      "thickness": 1.5,
+      "opacity": "sin(t * PI * 4 + 1) * 0.5 + 0.5"
+    },
+    {
+      "type": "line",
+      "points": [[0, 1.5, 0], [-2.5, 1.5, 0]],
+      "color": "#0066ff",
+      "thickness": 1.5,
+      "opacity": "sin(t * PI * 4 + 2) * 0.5 + 0.5"
+    },
+    {
+      "type": "line",
+      "points": [[0, 1.5, 0], [0, 1.5, 2.5]],
+      "color": "#0066ff",
+      "thickness": 1.5,
+      "opacity": "sin(t * PI * 4 + 3) * 0.5 + 0.5"
+    },
+    {
+      "type": "line",
+      "points": [[0, 1.5, 0], [0, 1.5, -2.5]],
+      "color": "#0066ff",
+      "thickness": 1.5,
+      "opacity": "sin(t * PI * 4 + 4) * 0.5 + 0.5"
+    },
+    {
+      "type": "particles",
+      "count": 40,
+      "bounds": [20, 12, 20],
+      "size": 1.2,
+      "color": "#00ffff",
+      "opacity": "sin(t * PI * 2) * 0.15 + 0.2",
+      "depth_fade": true
+    },
+    {
+      "type": "glyph",
+      "text": "sig.breath.001",
+      "font_size": 0.14,
+      "position": [-4.5, -2.2, 0],
+      "color": "#0066ff",
+      "opacity": 0.5
+    }
+  ],
+  "post": {
+    "bloom": 0.55,
+    "scanlines": { "intensity": 0.1, "count": 240 },
+    "chromatic_aberration": 0.005,
+    "noise": 0.03,
+    "vignette": 0.5
+  }
+}

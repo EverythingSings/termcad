@@ -1,0 +1,89 @@
+{
+  "canvas": {
+    "width": 640,
+    "height": 640,
+    "background": "#000000"
+  },
+  "camera": {
+    "position": [0, 8, 12],
+    "target": [0, 0, 0],
+    "fov": 45
+  },
+  "duration": 6.0,
+  "fps": 24,
+  "elements": [
+    {
+      "type": "wireframe",
+      "geometry": "cube",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 90" },
+      "scale": 3.0,
+      "color": "#ff0000",
+      "thickness": 1.0,
+      "opacity": "if_else(t < 0.166, 1.0, if_else(t < 0.333, 0.6, if_else(t < 0.5, 0.3, if_else(t < 0.666, 0.3, if_else(t < 0.833, 0.6, 1.0)))))"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "cube",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 90 + 15", "x": "t * 45" },
+      "scale": 2.5,
+      "color": "#ff6600",
+      "thickness": 1.0,
+      "opacity": "if_else(t < 0.166, 0.6, if_else(t < 0.333, 1.0, if_else(t < 0.5, 0.6, if_else(t < 0.666, 0.3, if_else(t < 0.833, 0.3, 0.6)))))"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "cube",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 90 + 30", "x": "t * 90" },
+      "scale": 2.0,
+      "color": "#ffcc00",
+      "thickness": 1.0,
+      "opacity": "if_else(t < 0.166, 0.3, if_else(t < 0.333, 0.6, if_else(t < 0.5, 1.0, if_else(t < 0.666, 0.6, if_else(t < 0.833, 0.3, 0.3)))))"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "cube",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 90 + 45", "x": "t * 135" },
+      "scale": 1.5,
+      "color": "#00ff00",
+      "thickness": 1.0,
+      "opacity": "if_else(t < 0.166, 0.3, if_else(t < 0.333, 0.3, if_else(t < 0.5, 0.6, if_else(t < 0.666, 1.0, if_else(t < 0.833, 0.6, 0.3)))))"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "cube",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 90 + 60", "x": "t * 180" },
+      "scale": 1.0,
+      "color": "#00ccff",
+      "thickness": 1.5,
+      "opacity": "if_else(t < 0.166, 0.3, if_else(t < 0.333, 0.3, if_else(t < 0.5, 0.3, if_else(t < 0.666, 0.6, if_else(t < 0.833, 1.0, 0.6)))))"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "ico",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 180", "z": "t * 90" },
+      "scale": 0.5,
+      "color": "#ff00ff",
+      "thickness": 2.0,
+      "opacity": "if_else(t < 0.166, 0.3, if_else(t < 0.333, 0.3, if_else(t < 0.5, 0.3, if_else(t < 0.666, 0.3, if_else(t < 0.833, 0.6, 1.0)))))"
+    },
+    {
+      "type": "glyph",
+      "text": "MATRYOSHKA",
+      "font_size": 0.25,
+      "position": [0, 5, 0],
+      "color": "#ffffff",
+      "opacity": "smoothstep(t, 0.0, 0.1)"
+    }
+  ],
+  "post": {
+    "bloom": 0.5,
+    "noise": 0.02,
+    "vignette": 0.6
+  }
+}

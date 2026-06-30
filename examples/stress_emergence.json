@@ -1,0 +1,130 @@
+{
+  "canvas": {
+    "width": 720,
+    "height": 720,
+    "background": "#000000"
+  },
+  "camera": {
+    "position": [0, 0, 10],
+    "target": [0, 0, 0],
+    "fov": 45
+  },
+  "duration": 10.0,
+  "fps": 30,
+  "elements": [
+    {
+      "type": "wireframe",
+      "geometry": "ico",
+      "position": [0, 0, 0],
+      "rotation": {
+        "x": "ease_in_out(t) * 360",
+        "y": "ease_in_out(t) * 720",
+        "z": "ease_in_out(t) * 180"
+      },
+      "scale": "smoothstep(t, 0.0, 0.3) * 2.5",
+      "color": "#ffffff",
+      "thickness": 1.0,
+      "opacity": "smoothstep(t, 0.0, 0.2) * (1 - smoothstep(t, 0.8, 1.0))"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "sphere",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * -180" },
+      "scale": "smoothstep(t, 0.1, 0.4) * 2.0",
+      "color": "#aaaaff",
+      "thickness": 0.8,
+      "opacity": "smoothstep(t, 0.1, 0.25) * (1 - smoothstep(t, 0.75, 0.9)) * 0.6"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "torus",
+      "position": [0, 0, 0],
+      "rotation": {
+        "x": "90 + sin(ease_in_out(t) * PI * 2) * 30",
+        "y": "t * 90"
+      },
+      "scale": "smoothstep(t, 0.2, 0.5) * 3.0",
+      "color": "#8888ff",
+      "thickness": 0.8,
+      "opacity": "smoothstep(t, 0.2, 0.35) * (1 - smoothstep(t, 0.65, 0.8)) * 0.5"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "torus",
+      "position": [0, 0, 0],
+      "rotation": {
+        "x": "sin(ease_in_out(t) * PI * 2) * 30",
+        "z": "t * -60"
+      },
+      "scale": "smoothstep(t, 0.25, 0.55) * 3.5",
+      "color": "#6666ff",
+      "thickness": 0.8,
+      "opacity": "smoothstep(t, 0.25, 0.4) * (1 - smoothstep(t, 0.6, 0.75)) * 0.4"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "cube",
+      "position": [0, 0, 0],
+      "rotation": {
+        "x": "45.0",
+        "y": "45.0 + ease_in(t) * 180",
+        "z": "t * 30"
+      },
+      "scale": "smoothstep(t, 0.3, 0.6) * 4.0",
+      "color": "#4444dd",
+      "thickness": 0.6,
+      "opacity": "smoothstep(t, 0.3, 0.45) * (1 - smoothstep(t, 0.55, 0.7)) * 0.3"
+    },
+    {
+      "type": "line",
+      "points": [[0, 0, 0], [0, 5, 0]],
+      "color": "#ffffff",
+      "thickness": 1.5,
+      "opacity": "smoothstep(t, 0.4, 0.5) * (1 - smoothstep(t, 0.5, 0.6)) * 0.8"
+    },
+    {
+      "type": "line",
+      "points": [[0, 0, 0], [0, -5, 0]],
+      "color": "#ffffff",
+      "thickness": 1.5,
+      "opacity": "smoothstep(t, 0.4, 0.5) * (1 - smoothstep(t, 0.5, 0.6)) * 0.8"
+    },
+    {
+      "type": "line",
+      "points": [[0, 0, 0], [5, 0, 0]],
+      "color": "#ffffff",
+      "thickness": 1.5,
+      "opacity": "smoothstep(t, 0.45, 0.55) * (1 - smoothstep(t, 0.55, 0.65)) * 0.8"
+    },
+    {
+      "type": "line",
+      "points": [[0, 0, 0], [-5, 0, 0]],
+      "color": "#ffffff",
+      "thickness": 1.5,
+      "opacity": "smoothstep(t, 0.45, 0.55) * (1 - smoothstep(t, 0.55, 0.65)) * 0.8"
+    },
+    {
+      "type": "glyph",
+      "text": "EMERGENCE",
+      "font_size": 0.25,
+      "position": [0, 4.5, 0],
+      "color": "#ffffff",
+      "opacity": "smoothstep(t, 0.85, 0.95)"
+    },
+    {
+      "type": "particles",
+      "count": 50,
+      "bounds": [15, 15, 15],
+      "size": 0.6,
+      "color": "#8888ff",
+      "opacity": "smoothstep(t, 0.0, 0.2) * 0.2",
+      "depth_fade": true
+    }
+  ],
+  "post": {
+    "bloom": 0.4,
+    "noise": 0.02,
+    "vignette": 0.5
+  }
+}

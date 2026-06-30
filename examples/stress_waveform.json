@@ -1,0 +1,191 @@
+{
+  "canvas": {
+    "width": 800,
+    "height": 400,
+    "background": "#000408"
+  },
+  "camera": {
+    "position": [0, 0, 12],
+    "target": [0, 0, 0],
+    "fov": 45
+  },
+  "duration": 3.0,
+  "fps": 30,
+  "elements": [
+    {
+      "type": "line",
+      "points": [[-6, 0, 0], [-5.5, 0, 0]],
+      "color": "#00ff88",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[-5.3, 0, 0], [-4.8, 0, 0]],
+      "color": "#00ff88",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 0.3) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[-4.6, 0, 0], [-4.1, 0, 0]],
+      "color": "#00ff88",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 0.6) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[-3.9, 0, 0], [-3.4, 0, 0]],
+      "color": "#00ff88",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 0.9) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[-3.2, 0, 0], [-2.7, 0, 0]],
+      "color": "#00ff88",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 1.2) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[-2.5, 0, 0], [-2.0, 0, 0]],
+      "color": "#00ffcc",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 1.5) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[-1.8, 0, 0], [-1.3, 0, 0]],
+      "color": "#00ffcc",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 1.8) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[-1.1, 0, 0], [-0.6, 0, 0]],
+      "color": "#00ffff",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 2.1) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[-0.4, 0, 0], [0.1, 0, 0]],
+      "color": "#00ffff",
+      "thickness": 2.5,
+      "opacity": "if_else(sin(t * PI * 8 + 2.4) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[0.3, 0, 0], [0.8, 0, 0]],
+      "color": "#00ffff",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 2.7) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[1.0, 0, 0], [1.5, 0, 0]],
+      "color": "#00ccff",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 3.0) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[1.7, 0, 0], [2.2, 0, 0]],
+      "color": "#00ccff",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 3.3) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[2.4, 0, 0], [2.9, 0, 0]],
+      "color": "#0099ff",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 3.6) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[3.1, 0, 0], [3.6, 0, 0]],
+      "color": "#0099ff",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 3.9) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[3.8, 0, 0], [4.3, 0, 0]],
+      "color": "#0066ff",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 4.2) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[4.5, 0, 0], [5.0, 0, 0]],
+      "color": "#0066ff",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 4.5) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[5.2, 0, 0], [5.7, 0, 0]],
+      "color": "#0044ff",
+      "thickness": 2.0,
+      "opacity": "if_else(sin(t * PI * 8 + 4.8) > 0.8, 1.0, 0.2)"
+    },
+    {
+      "type": "line",
+      "points": [[-6, -0.5, 0], [6, -0.5, 0]],
+      "color": "#333366",
+      "thickness": 1.0,
+      "opacity": 0.5
+    },
+    {
+      "type": "line",
+      "points": [[-6, 0.5, 0], [6, 0.5, 0]],
+      "color": "#333366",
+      "thickness": 1.0,
+      "opacity": 0.5
+    },
+    {
+      "type": "wireframe",
+      "geometry": "ico",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 720" },
+      "scale": "0.2 + sin(t * PI * 4) * sin(t * PI * 4) * 0.15",
+      "color": "#ffffff",
+      "thickness": 2.0,
+      "opacity": "smoothstep(t, 0.0, 0.05)"
+    },
+    {
+      "type": "glyph",
+      "text": "SIGNAL TRACE",
+      "font_size": 0.15,
+      "position": [-5.5, 1.8, 0],
+      "color": "#00ff88",
+      "opacity": "smoothstep(t, 0.0, 0.1)"
+    },
+    {
+      "type": "glyph",
+      "text": "FREQ: 8.0 Hz",
+      "font_size": 0.1,
+      "position": [-5.5, 1.4, 0],
+      "color": "#666688",
+      "opacity": "step(t, 0.2)"
+    },
+    {
+      "type": "glyph",
+      "text": "AMPLITUDE: DIGITAL",
+      "font_size": 0.1,
+      "position": [-5.5, 1.1, 0],
+      "color": "#666688",
+      "opacity": "step(t, 0.3)"
+    }
+  ],
+  "post": {
+    "bloom": 0.6,
+    "scanlines": { "intensity": 0.2, "count": 200 },
+    "chromatic_aberration": 0.004,
+    "noise": 0.04,
+    "vignette": 0.5,
+    "crt_curvature": 0.1
+  }
+}

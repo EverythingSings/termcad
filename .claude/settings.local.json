@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh repo create:*)",
+      "Bash(gh issue create --title \"Remove unsafe unwrap\\(\\) calls in library code\" --body \"$\\(cat <<''EOF''\n## Problem\n\nMultiple `unwrap\\(\\)` calls in library code can cause panics on recoverable errors.\n\n## Locations\n\n### High Priority\n- **`src/main.rs:248`** - `serde_json::to_string_pretty\\(&scene\\).unwrap\\(\\)` in `cmd_init\\(\\)`\n- **`src/output/gif.rs:64,67,87,89,94`** - `path.to_str\\(\\).unwrap\\(\\)` in ffmpeg command building \\(fails on non-UTF8 paths\\)\n- **`src/render/pipeline.rs:377`** - `tx.send\\(result\\).unwrap\\(\\)` in GPU callback\n- **`src/primitives/line.rs:37`** - `self.points.last\\(\\).unwrap\\(\\)` despite prior check\n\n### Lower Risk \\(but should fix\\)\n- **`src/render/post.rs:185`** - `self.post_pipeline.as_ref\\(\\).unwrap\\(\\)` after `is_none\\(\\)` check\n\n## Expected Behavior\n\nAll errors should be propagated via `Result<T, E>` and handled gracefully. Library code should never panic on recoverable conditions.\n\n## Suggested Fix\n\n1. Replace `unwrap\\(\\)` with proper error handling using `?` or `map_err\\(\\)`\n2. For path conversions, add `GifError::InvalidPath` variant\n3. For channel sends, use `send\\(\\).ok\\(\\)` or add `ChannelError` variant\nEOF\n\\)\")",
+      "Bash(gh issue create:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd CLAUDE.md with development standards\n\nDocuments project architecture, build commands, and establishes\nstandards for functional programming, TDD, and documentation.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(cargo build:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo doc:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nRemove unsafe unwrap\\(\\) calls in library code\n\nCloses #1\n\n- Add GifError::InvalidPath variant for non-UTF8 path handling\n- Add path_to_str\\(\\) helper in gif.rs to safely convert paths\n- Handle serde_json serialization error in cmd_init\\(\\)\n- Add TermcadError::SerializationError variant with exit code 5\n- Use let _ = tx.send\\(\\) instead of unwrap in GPU callback\n- Use if let pattern instead of is_none\\(\\)+unwrap\\(\\) in post.rs\n- Use if let for safe last\\(\\) access in line.rs\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(cargo run:*)",
+      "Bash(echo:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nImprove error types with structured variants\n\n- Add ExpressionError type returning Result instead of Option\n- Refactor TermcadError to use #[from] for automatic conversion\n- Preserve source error context through the error chain\n- Add specific variants: Parse, Validation, Render, Io, Gif, FrameWrite\n- Add UnknownTemplate and UnknownPrimitive for user-facing errors\n- Add 17 unit tests for error types and conversions\n\nCloses #2\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd default output to Videos/Downloads and SIGNAL series examples\n\n- Add dirs crate for cross-platform user directory resolution\n- Default render output to Videos folder, then Downloads, then cwd\n- Add 5 new example scenes: pulsar and SIGNAL series \\(pulse, beacon,\n  sync, lost\\) demonstrating cohesive visual language within termcad''s\n  design system\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(for scene in examples/*.json)",
+      "Bash(do echo \"Validating $scene...\")",
+      "Bash(done)",
+      "Bash(do echo \"=== $scene ===\")",
+      "Bash(git commit:*)",
+      "Bash(find:*)",
+      "Bash(rustc:*)",
+      "Bash(.debug.exe)",
+      "Bash(./debug.exe:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(./target/debug/termcad validate:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

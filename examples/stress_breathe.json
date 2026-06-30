@@ -1,0 +1,94 @@
+{
+  "canvas": {
+    "width": 600,
+    "height": 600,
+    "background": "#000204"
+  },
+  "camera": {
+    "position": [0, 0, 8],
+    "target": [0, 0, 0],
+    "fov": 50
+  },
+  "duration": 8.0,
+  "fps": 24,
+  "elements": [
+    {
+      "type": "wireframe",
+      "geometry": "sphere",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 45" },
+      "scale": "1.0 + smoothstep(t, 0.0, 0.25) * 0.5 - smoothstep(t, 0.25, 0.5) * 0.5 + smoothstep(t, 0.5, 0.75) * 0.5 - smoothstep(t, 0.75, 1.0) * 0.5",
+      "color": "#2288aa",
+      "thickness": 1.0,
+      "opacity": "0.3 + smoothstep(t, 0.0, 0.25) * 0.4 - smoothstep(t, 0.25, 0.5) * 0.4 + smoothstep(t, 0.5, 0.75) * 0.4 - smoothstep(t, 0.75, 1.0) * 0.4"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "sphere",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 45 + 30" },
+      "scale": "0.8 + smoothstep(t, 0.0, 0.25) * 0.4 - smoothstep(t, 0.25, 0.5) * 0.4 + smoothstep(t, 0.5, 0.75) * 0.4 - smoothstep(t, 0.75, 1.0) * 0.4",
+      "color": "#44aacc",
+      "thickness": 1.0,
+      "opacity": "0.25 + smoothstep(t, 0.0, 0.25) * 0.35 - smoothstep(t, 0.25, 0.5) * 0.35 + smoothstep(t, 0.5, 0.75) * 0.35 - smoothstep(t, 0.75, 1.0) * 0.35"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "sphere",
+      "position": [0, 0, 0],
+      "rotation": { "y": "t * 45 + 60" },
+      "scale": "0.6 + smoothstep(t, 0.0, 0.25) * 0.3 - smoothstep(t, 0.25, 0.5) * 0.3 + smoothstep(t, 0.5, 0.75) * 0.3 - smoothstep(t, 0.75, 1.0) * 0.3",
+      "color": "#66ccee",
+      "thickness": 1.0,
+      "opacity": "0.2 + smoothstep(t, 0.0, 0.25) * 0.3 - smoothstep(t, 0.25, 0.5) * 0.3 + smoothstep(t, 0.5, 0.75) * 0.3 - smoothstep(t, 0.75, 1.0) * 0.3"
+    },
+    {
+      "type": "wireframe",
+      "geometry": "ico",
+      "position": [0, 0, 0],
+      "rotation": { "x": "t * 90", "z": "t * 60" },
+      "scale": "0.3 + smoothstep(t, 0.0, 0.25) * 0.15 - smoothstep(t, 0.25, 0.5) * 0.15 + smoothstep(t, 0.5, 0.75) * 0.15 - smoothstep(t, 0.75, 1.0) * 0.15",
+      "color": "#ffffff",
+      "thickness": 1.5,
+      "opacity": "0.6 + smoothstep(t, 0.0, 0.25) * 0.4 - smoothstep(t, 0.25, 0.5) * 0.4 + smoothstep(t, 0.5, 0.75) * 0.4 - smoothstep(t, 0.75, 1.0) * 0.4"
+    },
+    {
+      "type": "glyph",
+      "text": "INHALE",
+      "font_size": 0.15,
+      "position": [0, 2.5, 0],
+      "color": "#88ddff",
+      "opacity": "if_else(t < 0.25, smoothstep(t, 0.0, 0.1), if_else(t < 0.5, 1.0 - smoothstep(t, 0.2, 0.3), if_else(t < 0.75, 0.0, 0.0)))"
+    },
+    {
+      "type": "glyph",
+      "text": "EXHALE",
+      "font_size": 0.15,
+      "position": [0, 2.5, 0],
+      "color": "#88ddff",
+      "opacity": "if_else(t < 0.5, 0.0, if_else(t < 0.75, smoothstep(t, 0.5, 0.6), 1.0 - smoothstep(t, 0.7, 0.8)))"
+    },
+    {
+      "type": "glyph",
+      "text": "HOLD",
+      "font_size": 0.12,
+      "position": [0, -2.5, 0],
+      "color": "#446688",
+      "opacity": "if_else(t < 0.2, 0.0, if_else(t < 0.3, smoothstep(t, 0.2, 0.25), if_else(t < 0.45, 1.0, if_else(t < 0.55, 1.0 - smoothstep(t, 0.45, 0.5), if_else(t < 0.7, 0.0, if_else(t < 0.8, smoothstep(t, 0.7, 0.75), if_else(t < 0.95, 1.0, 1.0 - smoothstep(t, 0.95, 1.0))))))))"
+    },
+    {
+      "type": "particles",
+      "count": 30,
+      "bounds": [10, 10, 10],
+      "size": 0.8,
+      "color": "#66aacc",
+      "opacity": 0.15,
+      "depth_fade": true
+    }
+  ],
+  "post": {
+    "bloom": 0.5,
+    "noise": 0.015,
+    "vignette": 0.7
+  }
+}
